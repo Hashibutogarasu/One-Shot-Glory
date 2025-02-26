@@ -1,6 +1,7 @@
-package com.karasu256.one_shot_glory.commands;
+package com.karasu256.one_shot_glory.commands.subcommands;
 
 import com.karasu256.one_shot_glory.One_Shot_Glory;
+import com.karasu256.one_shot_glory.commands.SubCommand;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.command.CommandSender;
 
@@ -34,7 +35,6 @@ public class ConfigSubCommand implements SubCommand {
             return true;
         }
 
-        // Set config value
         String value = args[2];
 
         try {

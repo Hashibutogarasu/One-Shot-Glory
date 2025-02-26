@@ -1,6 +1,7 @@
-package com.karasu256.one_shot_glory.commands;
+package com.karasu256.one_shot_glory.commands.subcommands;
 
 import com.karasu256.one_shot_glory.One_Shot_Glory;
+import com.karasu256.one_shot_glory.commands.SubCommand;
 import com.karasu256.one_shot_glory.game.Initializer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.player.PlayerInteractEvent;

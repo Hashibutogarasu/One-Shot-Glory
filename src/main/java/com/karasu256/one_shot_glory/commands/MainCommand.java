@@ -1,5 +1,6 @@
 package com.karasu256.one_shot_glory.commands;
 
+import com.karasu256.one_shot_glory.commands.subcommands.*;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.java.JavaPlugin;

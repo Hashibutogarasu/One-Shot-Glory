@@ -1,5 +1,6 @@
-package com.karasu256.one_shot_glory.commands;
+package com.karasu256.one_shot_glory.commands.subcommands;
 
+import com.karasu256.one_shot_glory.commands.SubCommand;
 import org.bukkit.command.CommandSender;
 import java.util.ArrayList;
 import java.util.List;
