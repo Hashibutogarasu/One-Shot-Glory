@@ -4,7 +4,7 @@
 ![Paper API](https://img.shields.io/badge/Paper--API-1.21.3-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-ワンショットグローリー（One Shot Glory）は、プレイヤー同士の戦闘をより激しくするMinecraftプラグインです。
+ワンショットグローリー（One Shot Glory）は、プレイヤー同士の戦闘をより激しく、または面白くするMinecraftプラグインです。
 
 ## 概要 📝
 
