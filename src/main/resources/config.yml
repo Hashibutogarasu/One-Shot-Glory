@@ -1,0 +1,10 @@
+# One Shot Glory Configuration
+
+#Randomize the targets of the items
+randomize_targets_items: true
+
+#Enable the buffs
+enable_buffs: true
+
+#Respawn set health
+respawn_set_health_delay: 15
