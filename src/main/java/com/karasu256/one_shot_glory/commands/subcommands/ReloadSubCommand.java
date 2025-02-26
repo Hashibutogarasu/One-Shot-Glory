@@ -1,5 +1,6 @@
 package com.karasu256.one_shot_glory.commands.subcommands;
 
+import com.karasu256.one_shot_glory.One_Shot_Glory;
 import com.karasu256.one_shot_glory.commands.SubCommand;
 import org.bukkit.command.CommandSender;
 import java.util.ArrayList;
@@ -16,8 +17,11 @@ public class ReloadSubCommand implements SubCommand {
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
+        One_Shot_Glory plugin = One_Shot_Glory.getPlugin(One_Shot_Glory.class);
+        var langManager = plugin.getLanguageManager();
+
         if (!sender.hasPermission("osg.reload")) {
-            sender.sendMessage("§cYou don't have permission to use this command!");
+            sender.sendMessage(langManager.getMessage("commands.no-permission", null));
             return true;
         }
 
@@ -28,9 +32,8 @@ public class ReloadSubCommand implements SubCommand {
             }
         }
 
-        // Default reload behavior
-        sender.sendMessage("§aReload subcommands:");
-        sender.sendMessage("§a/osg reload config - Reload plugin configuration");
+        sender.sendMessage(langManager.getMessage("commands.reload.available", null));
+        sender.sendMessage(langManager.getMessage("commands.reload.config-help", null));
         return true;
     }
 

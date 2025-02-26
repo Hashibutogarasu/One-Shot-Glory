@@ -11,32 +11,36 @@ import java.util.List;
 public class ConfigSubCommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
+        One_Shot_Glory plugin = One_Shot_Glory.getPlugin(One_Shot_Glory.class);
+        var langManager = plugin.getLanguageManager();
+
         if (!sender.hasPermission("osg.config")) {
-            sender.sendMessage("§cYou don't have permission to use this command!");
+            sender.sendMessage(langManager.getMessage("commands.no-permission", null));
             return true;
         }
 
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /osg config <property> [value]");
+            sender.sendMessage(langManager.getMessage("commands.config.usage", null));
             return true;
         }
 
         String property = args[1];
-        Configuration config = One_Shot_Glory.getPlugin(One_Shot_Glory.class).getConfig();
+        Configuration config = plugin.getConfig();
         
         if (args.length == 2) {
-            // Get config value
             Object value = config.get(property);
             if (value == null) {
-                sender.sendMessage("§cProperty '" + property + "' not found!");
+                sender.sendMessage(langManager.getMessage("commands.config.not-found", null)
+                    .replace("{property}", property));
             } else {
-                sender.sendMessage("§a" + property + " = " + value);
+                sender.sendMessage(langManager.getMessage("commands.config.current-value", null)
+                    .replace("{property}", property)
+                    .replace("{value}", value.toString()));
             }
             return true;
         }
 
         String value = args[2];
-
         try {
             int intValue = Integer.parseInt(value);
             config.set(property, intValue);
@@ -49,8 +53,10 @@ public class ConfigSubCommand implements SubCommand {
             }
         }
 
-        One_Shot_Glory.getPlugin(One_Shot_Glory.class).saveConfig();
-        sender.sendMessage("§aSuccessfully set " + property + " to " + value);
+        plugin.saveConfig();
+        sender.sendMessage(langManager.getMessage("commands.config.set-value", null)
+            .replace("{property}", property)
+            .replace("{value}", value));
         return true;
     }
 
@@ -61,8 +67,8 @@ public class ConfigSubCommand implements SubCommand {
         }
 
         if (args.length == 2) {
-            // Return all config keys for property argument
-            return new ArrayList<>(One_Shot_Glory.getPlugin(One_Shot_Glory.class).getConfig().getKeys(true));
+            One_Shot_Glory plugin = One_Shot_Glory.getPlugin(One_Shot_Glory.class);
+            return new ArrayList<>(plugin.getConfig().getKeys(true));
         }
 
         return new ArrayList<>();

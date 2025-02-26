@@ -1,6 +1,7 @@
 package com.karasu256.one_shot_glory;
 
 import com.karasu256.one_shot_glory.commands.MainCommand;
+import com.karasu256.one_shot_glory.util.LanguageManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -16,6 +17,7 @@ public final class One_Shot_Glory extends JavaPlugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(One_Shot_Glory.class);
     public static @NotNull FileConfiguration config = new YamlConfiguration();
     private File configFile;
+    private LanguageManager languageManager;
 
     @Override
     public void onEnable() {
@@ -34,9 +36,12 @@ public final class One_Shot_Glory extends JavaPlugin {
 
         // Load config
         config = YamlConfiguration.loadConfiguration(configFile);
+        
+        // Initialize language manager
+        languageManager = new LanguageManager(this);
+        
+        // Save config and register commands
         saveConfig();
-
-        // Register the main command
         new MainCommand(this);
     }
 
@@ -47,7 +52,6 @@ public final class One_Shot_Glory extends JavaPlugin {
     @Override
     public void onDisable() {
         PlayerInteractEvent.getHandlerList().unregister(this);
-
         saveConfig();
     }
 
@@ -58,5 +62,9 @@ public final class One_Shot_Glory extends JavaPlugin {
         } catch (IOException e) {
             LOGGER.error("Failed to save the config file: {}", e.getMessage());
         }
+    }
+
+    public LanguageManager getLanguageManager() {
+        return languageManager;
     }
 }

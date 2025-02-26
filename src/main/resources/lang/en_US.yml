@@ -1,0 +1,34 @@
+# English language configuration for One Shot Glory plugin
+langCode: en_US
+commands:
+  no-permission: "&cYou don't have permission to use this command!"
+  unknown-subcommand: "&cUnknown subcommand."
+  specify-subcommand: "&cPlease specify a subcommand."
+  
+  help:
+    title: "&aAvailable Commands:"
+    help: "&a/osg help - Display this help message"
+    reload: "&a/osg reload - Show reload commands"
+    reload-config: "&a/osg reload config - Reload plugin configuration"
+    config: "&a/osg config - Get or set configuration values"
+    start: "&a/osg start - Enable One Shot Glory functionality"
+    stop: "&a/osg stop - Disable One Shot Glory functionality"
+    
+  config:
+    usage: "&cUsage: /osg config <property> [value]"
+    not-found: "&cProperty '{property}' not found!"
+    current-value: "&a{property} value: {value}"
+    set-value: "&aSet {property} value to {value}"
+    
+  reload:
+    config:
+      success: "&aConfiguration reloaded successfully!"
+      error: "&cFailed to reload configuration: {error}"
+    available: "&aReload subcommands:"
+    config-help: "&a/osg reload config - Reload plugin configuration"
+    
+  start:
+    success: "&aOne Shot Glory has been enabled!"
+    
+  stop:
+    success: "&aOne Shot Glory has been disabled!"

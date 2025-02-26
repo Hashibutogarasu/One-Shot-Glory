@@ -1,5 +1,6 @@
 package com.karasu256.one_shot_glory.commands;
 
+import com.karasu256.one_shot_glory.One_Shot_Glory;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -19,13 +20,13 @@ public class BaseCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§cPlease specify a subcommand.");
+            sender.sendMessage(One_Shot_Glory.getPlugin(One_Shot_Glory.class).getLanguageManager().getMessage("commands.specify-subcommand", null));
             return true;
         }
 
         SubCommand subCommand = subCommands.get(args[0].toLowerCase());
         if (subCommand == null) {
-            sender.sendMessage("§cUnknown subcommand.");
+            sender.sendMessage(One_Shot_Glory.getPlugin(One_Shot_Glory.class).getLanguageManager().getMessage("commands.unknown-subcommand", null));
             return true;
         }
 
