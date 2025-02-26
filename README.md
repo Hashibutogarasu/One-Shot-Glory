@@ -60,6 +60,7 @@ respawn_set_health_delay: 15
 ## 作者 👤
 
 企画: Hashibutogarasu
+
 開発者: Hashibutogarasu
 
 ## ライセンス 📄
