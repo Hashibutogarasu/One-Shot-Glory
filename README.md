@@ -1,10 +1,10 @@
-# One Shot Glory
+# 射抜け！スナイパーの森
 
 ![Minecraft Version](https://img.shields.io/badge/Minecraft-1.21.3-brightgreen)
 ![Paper API](https://img.shields.io/badge/Paper--API-1.21.3-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-ワンショットグローリー（One Shot Glory）は、プレイヤー同士の戦闘をより激しく、または面白くするMinecraftプラグインです。
+"射抜け！スナイパーの森"は、プレイヤー同士の戦闘をより激しく、または面白くするMinecraftプラグインです。
 
 ## 概要 📝
 
