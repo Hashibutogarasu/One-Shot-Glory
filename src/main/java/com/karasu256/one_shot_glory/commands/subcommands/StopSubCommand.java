@@ -25,7 +25,7 @@ public class StopSubCommand implements SubCommand {
         PlayerInteractEvent.getHandlerList().unregister(plugin);
 
         sender.sendMessage(langManager.getMessage("commands.stop.success", null));
-        return Initializer.unRegister();
+        return Initializer.stop();
     }
 
     @Override

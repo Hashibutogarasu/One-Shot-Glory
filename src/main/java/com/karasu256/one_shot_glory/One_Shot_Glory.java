@@ -5,6 +5,7 @@ import com.karasu256.one_shot_glory.util.LanguageManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -66,5 +67,9 @@ public final class One_Shot_Glory extends JavaPlugin {
 
     public LanguageManager getLanguageManager() {
         return languageManager;
+    }
+
+    public static Plugin getPlugin() {
+        return getPlugin(One_Shot_Glory.class);
     }
 }
