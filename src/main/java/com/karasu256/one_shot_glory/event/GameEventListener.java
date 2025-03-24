@@ -3,6 +3,7 @@ package com.karasu256.one_shot_glory.event;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -109,7 +110,14 @@ public class GameEventListener implements Listener {
 
     @EventHandler()
     private void onPlayerDeath(PlayerDeathEvent event) {
-
+        // プレイヤーが死亡したときに、そのプレイヤーの上の防具立てを削除する
+        Player player = event.getEntity();
+        
+        // プレイヤーのUUIDを使って、所有者メタデータが一致する防具立てを探して削除
+        player.getWorld().getEntitiesByClass(ArmorStand.class).stream()
+                .filter(armorStand -> armorStand.hasMetadata("owner") && 
+                        armorStand.getMetadata("owner").get(0).asString().equals(player.getUniqueId().toString()))
+                .forEach(Entity::remove);
     }
 
     @EventHandler()
