@@ -1,0 +1,41 @@
+name: Upload Single JAR Artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      jar_path:
+        description: 'Path to the JAR file'
+        required: true
+      artifact_name:
+        description: 'Name for the artifact'
+        required: true
+      retention_days:
+        description: 'Days to retain the artifact'
+        required: false
+        default: '14'
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare JAR file
+        run: |
+          echo "Preparing to upload JAR from path: ${{ github.event.inputs.jar_path }}"
+          mkdir -p temp_artifact
+          if [ -f "${{ github.event.inputs.jar_path }}" ]; then
+            cp "${{ github.event.inputs.jar_path }}" temp_artifact/
+            echo "JAR file copied to temp directory"
+          else
+            echo "::error::JAR file not found at path: ${{ github.event.inputs.jar_path }}"
+            exit 1
+          fi
+
+      - name: Upload JAR as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.artifact_name }}
+          path: temp_artifact/$(basename ${{ github.event.inputs.jar_path }})
+          retention-days: ${{ github.event.inputs.retention_days }}

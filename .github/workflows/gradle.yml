@@ -28,24 +28,32 @@ jobs:
       - name: Build with Gradle Wrapper
         run: ./gradlew build
         
-      - name: List JAR files
-        id: list-jars
+      - name: Find JAR files
+        id: find-jars
+        shell: bash
         run: |
-          echo "jars=$(find build/libs/ -name "*.jar" | xargs -I{} basename {} | tr '\n' ' ')" >> $GITHUB_OUTPUT
-          
+          echo "jar_files=$(find build/libs/ -name "*.jar" -type f | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          echo "Found JARs: $(find build/libs/ -name "*.jar" -type f | wc -l)"
+
       - name: Upload JAR files individually
+        if: ${{ steps.find-jars.outputs.jar_files != '' }}
         run: |
-          for jar in $(find build/libs/ -name "*.jar"); do
-            filename=$(basename $jar)
-            echo "Uploading $filename"
-            echo "::group::Upload $filename"
-            curl -X POST \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              --data '{"name":"'$filename'","path":"'$jar'","retention_days":14}' \
-              https://uploads.github.com/repos/${{ github.repository }}/actions/artifacts
-            echo "::endgroup::"
+          for jar_file in ${{ steps.find-jars.outputs.jar_files }}; do
+            if [ -f "$jar_file" ]; then
+              filename=$(basename "$jar_file")
+              artifact_name="${filename%.jar}"
+              
+              echo "Uploading $filename as artifact: $artifact_name"
+              
+              gh workflow run .github/workflows/upload-single-jar.yml \
+                -f jar_path="$jar_file" \
+                -f artifact_name="$artifact_name"
+            else
+              echo "::warning::File not found: $jar_file"
+            fi
           done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   dependency-submission:
     runs-on: ubuntu-latest
