@@ -3,7 +3,39 @@ plugins {
 }
 
 group = 'com.karasu256.one_shot_glory'
-version = '0.1'
+
+// ビルド番号を保存するプロパティファイルを定義
+def buildNumberFile = file('build-number.properties')
+def buildProps = new Properties()
+
+// プロパティファイルが存在する場合は読み込む、存在しない場合は新規作成
+if (buildNumberFile.exists()) {
+    buildNumberFile.withInputStream { buildProps.load(it) }
+} else {
+    buildProps.setProperty('buildNumber', '0')
+    buildNumberFile.createNewFile()
+}
+
+// 現在のビルド番号を取得
+def buildNumber = buildProps.getProperty('buildNumber').toInteger()
+
+// バージョン番号の設定（メジャー.マイナー-build.ビルド番号）
+version = '0.1-build.' + buildNumber
+
+// ビルド実行時にビルド番号をインクリメント
+task incrementBuildNumber {
+    doLast {
+        buildNumber++
+        buildProps.setProperty('buildNumber', buildNumber.toString())
+        buildNumberFile.withOutputStream { buildProps.store(it, "Build Number for ${project.name}") }
+        println "Build number incremented to ${buildNumber}"
+    }
+}
+
+// ビルドタスクの前にビルド番号をインクリメント
+tasks.named('build').configure {
+    dependsOn incrementBuildNumber
+}
 
 repositories {
     mavenCentral()

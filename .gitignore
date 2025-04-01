@@ -36,10 +36,13 @@ run/**
 *.zip
 *.tar.gz
 *.rar
+# Gradle Wrapperは例外的に含める
+!gradle/wrapper/gradle-wrapper.jar
 
 # Local configuration files
 *.properties
 !gradle-wrapper.properties
+!build-number.properties
 
 # Runtime directories
 bin/
