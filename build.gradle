@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'maven-publish'
+    id 'signing'
 }
 
 group = 'com.karasu256.one_shot_glory'
@@ -151,6 +153,10 @@ java {
     if (JavaVersion.current() < javaVersion) {
         toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     }
+    
+    // Maven Centralリリースに必要なJavadocとソースJARを追加
+    withJavadocJar()
+    withSourcesJar()
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -170,14 +176,68 @@ processResources {
     }
 }
 
-
 tasks.register('buildJar', Jar) {
-    archiveBaseName.set('OneShotGlory')
+    // archiveBaseName.setの代わりに、命名規則をMaven出版と一致させる
+    archiveBaseName.set('One-Shot-Glory')
     from sourceSets.main.output
     dependsOn configurations.compileClasspath
 }
 
-tasks.register('copyJar', Copy) {
-    from buildJar
-    into 'run/plugins'
+// Maven Central公開向けにJARファイルを確実に生成するための設定
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // jarタスクの出力を使用するのではなく、明示的にbuildJarタスクの出力を参照する
+            artifact tasks.named('buildJar')
+            artifact tasks.named('javadocJar')
+            artifact tasks.named('sourcesJar')
+            
+            pom {
+                name = 'One-Shot Glory'
+                description = 'A Minecraft plugin that enhances combat with one-shot mechanics'
+                url = 'https://github.com/karasu256/One-Shot-Glory'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'hashibutogarasu'
+                        name = 'Hashibutogarasu'
+                        email = 'karasu@karasu256.com'
+                    }
+                }
+                
+                scm {
+                    connection = 'scm:git:git://github.com/karasu256/One-Shot-Glory.git'
+                    developerConnection = 'scm:git:ssh://github.com/karasu256/One-Shot-Glory.git'
+                    url = 'https://github.com/Hashibutogarasu/One-Shot-Glory'
+                }
+            }
+        }
+    }
+    
+    repositories {
+        maven {
+            name = "OSSRH"
+            def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            
+            credentials {
+                username = findProperty('ossrhUsername') ?: System.getenv('OSSRH_USERNAME')
+                password = findProperty('ossrhPassword') ?: System.getenv('OSSRH_PASSWORD')
+            }
+        }
+    }
+}
+
+signing {
+    required { gradle.taskGraph.hasTask("publish") }
+    useGpgCmd()
+    sign publishing.publications.mavenJava
 }

@@ -14,61 +14,111 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * One-Shot Gloryプラグインのメインクラス
+ * <p>
+ * このクラスはOne-Shot-Gloryプラグインのエントリーポイントとなり、
+ * プラグインの初期化、設定ファイルの管理、および各種機能の制御を行います。
+ * </p>
+ * 
+ * @author Hashibutogarasu
+ * @version 0.1.0
+ */
 public final class One_Shot_Glory extends JavaPlugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(One_Shot_Glory.class);
+    /** プラグインの設定情報を保持する設定オブジェクト */
     public static @NotNull FileConfiguration config = new YamlConfiguration();
+    /** 設定ファイルへの参照 */
     private File configFile;
+    /** 言語管理を行うマネージャー */
     private LanguageManager languageManager;
 
+    /**
+     * プラグインが有効化された際に呼び出されるメソッド
+     * <p>
+     * データフォルダの作成、設定ファイルの初期化、言語マネージャーの初期化、
+     * およびコマンドの登録などの初期化処理を行います。
+     * </p>
+     */
     @Override
     public void onEnable() {
-        // Create plugin data folder if it doesn't exist
+        // プラグインのデータフォルダが存在しない場合は作成
         if (!getDataFolder().exists()) {
             getDataFolder().mkdirs();
         }
 
-        // Initialize config file
+        // 設定ファイルの初期化
         configFile = new File(getDataFolder(), "config.yml");
         
-        // Save default config if it doesn't exist
+        // 設定ファイルが存在しない場合はデフォルト設定を保存
         if (!configFile.exists()) {
             saveDefaultConfig();
         }
 
-        // Load config
+        // 設定の読み込み
         config = YamlConfiguration.loadConfiguration(configFile);
         
-        // Initialize language manager
+        // 言語マネージャーの初期化
         languageManager = new LanguageManager(this);
         
-        // Save config and register commands
+        // 設定の保存とコマンドの登録
         saveConfig();
         new MainCommand(this);
     }
 
+    /**
+     * 設定ファイルを再読み込みするメソッド
+     * <p>
+     * 設定ファイルの内容を最新の状態に更新します。
+     * </p>
+     */
     public void loadConfig() {
         config = YamlConfiguration.loadConfiguration(configFile);
     }
 
+    /**
+     * プラグインが無効化された際に呼び出されるメソッド
+     * <p>
+     * イベントリスナーの登録解除や設定ファイルの保存など、
+     * プラグインのシャットダウン処理を行います。
+     * </p>
+     */
     @Override
     public void onDisable() {
         PlayerInteractEvent.getHandlerList().unregister(this);
         saveConfig();
     }
 
+    /**
+     * 設定ファイルを保存するメソッド
+     * <p>
+     * 現在のメモリ上の設定内容をファイルに保存します。
+     * 保存に失敗した場合はエラーログを出力します。
+     * </p>
+     */
     @Override
     public void saveConfig() {
         try {
             config.save(configFile);
         } catch (IOException e) {
-            LOGGER.error("Failed to save the config file: {}", e.getMessage());
+            LOGGER.error("設定ファイルの保存に失敗しました: {}", e.getMessage());
         }
     }
 
+    /**
+     * 言語マネージャーを取得するメソッド
+     * 
+     * @return 言語マネージャーのインスタンス
+     */
     public LanguageManager getLanguageManager() {
         return languageManager;
     }
 
+    /**
+     * プラグインのインスタンスを取得するためのユーティリティメソッド
+     * 
+     * @return プラグインのインスタンス
+     */
     public static Plugin getPlugin() {
         return getPlugin(One_Shot_Glory.class);
     }
