@@ -22,13 +22,40 @@ import com.karasu256.one_shot_glory.util.BuffSystem;
 import com.karasu256.one_shot_glory.util.BuffType;
 import com.karasu256.one_shot_glory.util.GameManager;
 
+/**
+ * One-Shot-Gloryゲームでのイベントを処理するリスナークラス
+ * <p>
+ * このクラスは、ゲームのメカニクスに関連するサーバーイベントをリッスンし、
+ * 適切な処理を行います。矢の命中、エンティティのダメージ、プレイヤーの移動、
+ * プレイヤーの死亡、リスポーンなどのイベントを処理します。
+ * </p>
+ * 
+ * @author Hashibutogarasu
+ * @version 1.0
+ */
 public class GameEventListener implements Listener {
+    /** スコア管理のための目標オブジェクト */
     private final Objective objective;
 
+    /**
+     * GameEventListenerのコンストラクタ
+     * <p>
+     * スコア管理のための目標オブジェクトを設定します。
+     * </p>
+     * 
+     * @param objective スコアを記録するための目標オブジェクト
+     */
     public GameEventListener(Objective objective) {
         this.objective = objective;
     }
 
+    /**
+     * このリスナーの登録を解除するメソッド
+     * <p>
+     * 関連するすべてのイベントハンドラの登録を解除します。
+     * このメソッドは、ゲームが停止したときや、プラグインが無効化されるときに呼び出されます。
+     * </p>
+     */
     public void unRegister() {
         ProjectileHitEvent.getHandlerList().unregister(this);
         PlayerMoveEvent.getHandlerList().unregister(this);
@@ -37,6 +64,14 @@ public class GameEventListener implements Listener {
         PlayerRespawnEvent.getHandlerList().unregister(this);
     }
 
+    /**
+     * 矢が何かに当たったときのイベントハンドラ
+     * <p>
+     * 矢がヒットしたときに、矢のエンティティを削除します。
+     * </p>
+     * 
+     * @param event 矢のヒットイベント
+     */
     @EventHandler()
     private void onArrowHit(ProjectileHitEvent event) {
         if (event.getEntityType() == EntityType.ARROW) {
@@ -46,6 +81,16 @@ public class GameEventListener implements Listener {
         }
     }
 
+    /**
+     * エンティティがダメージを受けたときのイベントハンドラ
+     * <p>
+     * ArmorStandがダメージを受けた場合、その所有者プレイヤーにダメージを与え、
+     * 攻撃したプレイヤーにスコアを加算します。また、ArmorStandの頭部アイテムに基づいて
+     * 攻撃者にバフ効果を付与します。
+     * </p>
+     * 
+     * @param event エンティティダメージイベント
+     */
     @EventHandler()
     private void onEntityDamage(EntityDamageEvent event) {
         // cancel the damage to the player
@@ -90,6 +135,15 @@ public class GameEventListener implements Listener {
         }
     }
 
+    /**
+     * プレイヤーが移動したときのイベントハンドラ
+     * <p>
+     * プレイヤーが移動したとき、そのプレイヤーに関連付けられたArmorStandの位置を更新します。
+     * ArmorStandはプレイヤーの頭上2ブロックの位置に配置されます。
+     * </p>
+     * 
+     * @param event プレイヤー移動イベント
+     */
     @EventHandler()
     private void onPlayerMove(PlayerMoveEvent event) {
         var player = event.getPlayer();
@@ -108,6 +162,14 @@ public class GameEventListener implements Listener {
         }
     }
 
+    /**
+     * プレイヤーが死亡したときのイベントハンドラ
+     * <p>
+     * プレイヤーが死亡したとき、そのプレイヤーに関連付けられたArmorStandを削除します。
+     * </p>
+     * 
+     * @param event プレイヤー死亡イベント
+     */
     @EventHandler()
     private void onPlayerDeath(PlayerDeathEvent event) {
         // プレイヤーが死亡したときに、そのプレイヤーの上の防具立てを削除する
@@ -120,6 +182,16 @@ public class GameEventListener implements Listener {
                 .forEach(Entity::remove);
     }
 
+    /**
+     * プレイヤーがリスポーンしたときのイベントハンドラ
+     * <p>
+     * プレイヤーがリスポーンしたとき、新しいターゲットを生成し、
+     * 一時的な耐性効果をプレイヤーに付与します。耐性の持続時間は
+     * 設定ファイルのrespawn_set_health_delayの値に基づいて決定されます。
+     * </p>
+     * 
+     * @param event プレイヤーリスポーンイベント
+     */
     @EventHandler()
     private void onPlayerRespawn(PlayerRespawnEvent event) {
         var plugin = One_Shot_Glory.getPlugin();

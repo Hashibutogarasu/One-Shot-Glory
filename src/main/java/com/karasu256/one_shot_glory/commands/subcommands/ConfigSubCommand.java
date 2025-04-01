@@ -8,7 +8,34 @@ import org.bukkit.command.CommandSender;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * プラグインの設定を参照・変更するサブコマンドを実装するクラス
+ * <p>
+ * このクラスはOne-Shot-Gloryプラグインの設定値を動的に確認したり
+ * 変更したりする機能を提供します。設定プロパティの値を取得したり、
+ * 新しい値を設定することができます。
+ * </p>
+ * 
+ * @author Hashibutogarasu
+ * @version 1.0
+ */
 public class ConfigSubCommand implements SubCommand {
+    /**
+     * 設定管理コマンドを実行するメソッド
+     * <p>
+     * このメソッドは以下の操作を行います：
+     * <ul>
+     *   <li>ユーザーの権限を確認</li>
+     *   <li>引数が1つの場合は、指定されたプロパティの現在の値を表示</li>
+     *   <li>引数が2つの場合は、指定されたプロパティに新しい値を設定</li>
+     *   <li>値のタイプ（整数、真偽値、文字列）を自動判別</li>
+     * </ul>
+     * </p>
+     * 
+     * @param sender コマンドを実行した送信者
+     * @param args コマンドの引数（プロパティ名と設定値）
+     * @return コマンドの実行が成功した場合はtrue
+     */
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         One_Shot_Glory plugin = One_Shot_Glory.getPlugin(One_Shot_Glory.class);
@@ -60,6 +87,17 @@ public class ConfigSubCommand implements SubCommand {
         return true;
     }
 
+    /**
+     * 設定コマンドのタブ補完を提供するメソッド
+     * <p>
+     * 2番目の引数を入力中の場合は、利用可能な設定キーのリストを提供します。
+     * 権限がない場合や、他の引数位置では空のリストを返します。
+     * </p>
+     * 
+     * @param sender タブ補完を要求した送信者
+     * @param args 現在入力されている引数
+     * @return 補完候補の文字列リスト
+     */
     @Override
     public List<String> tabComplete(CommandSender sender, String[] args) {
         if (!sender.hasPermission("osg.config")) {

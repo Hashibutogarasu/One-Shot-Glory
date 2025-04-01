@@ -9,17 +9,47 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * プラグインの多言語サポートを管理するクラス
+ * <p>
+ * このクラスは、プラグイン内のテキストメッセージを複数の言語で提供するための
+ * 言語ファイルの読み込みと管理を行います。YAMLファイル形式の言語ファイルを使用し、
+ * 指定された言語コードに基づいてメッセージを取得します。
+ * </p>
+ * 
+ * @author Hashibutogarasu
+ * @version 1.0
+ */
 public class LanguageManager {
+    /** プラグインのインスタンス */
     private final JavaPlugin plugin;
+    /** 言語コードとその設定ファイルのマッピング */
     private final Map<String, YamlConfiguration> languages;
+    /** デフォルト言語のコード */
     private String defaultLanguage = "en_US";
 
+    /**
+     * LanguageManagerのコンストラクタ
+     * <p>
+     * インスタンス生成時に言語ファイルを読み込みます。
+     * </p>
+     * 
+     * @param plugin このマネージャーを使用するJavaPluginのインスタンス
+     */
     public LanguageManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.languages = new HashMap<>();
         loadLanguages();
     }
 
+    /**
+     * 言語ファイルを読み込むメソッド
+     * <p>
+     * プラグインのlangディレクトリからすべての.ymlファイルを読み込み、
+     * 言語マップに格納します。言語ディレクトリが存在しない場合は作成し、
+     * デフォルトの言語ファイルを保存します。
+     * </p>
+     */
     private void loadLanguages() {
         File langFolder = new File(plugin.getDataFolder(), "lang");
         if (!langFolder.exists()) {
@@ -41,11 +71,28 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * デフォルトの言語ファイルを保存するメソッド
+     * <p>
+     * 英語(en_US)と日本語(ja_JP)のデフォルト言語ファイルをプラグインのリソースから
+     * langディレクトリに保存します。
+     * </p>
+     */
     private void saveDefaultLanguages() {
         saveResource("lang/en_US.yml");
         saveResource("lang/ja_JP.yml");
     }
 
+    /**
+     * プラグインのリソースをファイルとして保存するメソッド
+     * <p>
+     * 指定されたパスのリソースをプラグインのデータフォルダに保存します。
+     * 保存先のディレクトリが存在しない場合は作成します。
+     * </p>
+     * 
+     * @param resourcePath 保存するリソースのパス
+     * @throws IllegalArgumentException リソースが見つからない場合、または保存できない場合
+     */
     private void saveResource(String resourcePath) {
         if (resourcePath != null && !resourcePath.isEmpty()) {
             resourcePath = resourcePath.replace('\\', '/');
@@ -72,6 +119,20 @@ public class LanguageManager {
         }
     }
 
+    /**
+     * 指定されたパスと言語コードに基づいてメッセージを取得するメソッド
+     * <p>
+     * 指定された言語コードの言語ファイルからメッセージを取得します。
+     * メッセージが見つからない場合はデフォルト言語のメッセージを試み、
+     * それも見つからない場合はパス自体を返します。
+     * 取得したメッセージに対して色コードの変換と引数の置換を行います。
+     * </p>
+     * 
+     * @param path メッセージのパス
+     * @param langCode 言語コード。nullの場合はデフォルト言語が使用される
+     * @param args 置換する引数の配列
+     * @return 取得したメッセージ、または見つからない場合はパス自体
+     */
     public String getMessage(@NotNull String path, String langCode, Object... args) {
         if (path == null || path.isEmpty()) {
             return "";
@@ -116,12 +177,25 @@ public class LanguageManager {
         return message;
     }
 
+    /**
+     * デフォルト言語を設定するメソッド
+     * <p>
+     * 指定された言語コードが利用可能な場合、デフォルト言語として設定します。
+     * </p>
+     * 
+     * @param langCode 設定するデフォルト言語コード
+     */
     public void setDefaultLanguage(String langCode) {
         if (languages.containsKey(langCode)) {
             this.defaultLanguage = langCode;
         }
     }
 
+    /**
+     * 現在のデフォルト言語コードを取得するメソッド
+     * 
+     * @return デフォルト言語コード
+     */
     public String getDefaultLanguage() {
         return defaultLanguage;
     }

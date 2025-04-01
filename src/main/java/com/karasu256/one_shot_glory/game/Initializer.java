@@ -11,9 +11,38 @@ import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Team;
 
+/**
+ * One-Shot-Glory プラグインのゲーム初期化と管理を行うユーティリティクラス
+ * <p>
+ * このクラスはゲームセッションの初期化、停止、およびイベントリスナーの
+ * 登録解除など、ゲームの管理に関わる静的メソッドを提供します。
+ * スコアボードの設定やチームの作成、ターゲットの生成なども行います。
+ * </p>
+ * 
+ * @author Hashibutogarasu
+ * @version 1.0
+ */
 public class Initializer {
+    /** ゲームイベントを監視するリスナー */
     private static GameEventListener gameEventListener;
 
+    /**
+     * One-Shot-Gloryゲームを初期化するメソッド
+     * <p>
+     * 以下の処理を実行します：
+     * <ul>
+     *   <li>既存のイベントリスナーを登録解除</li>
+     *   <li>プレイヤーチームを作成または取得し、全プレイヤーを追加</li>
+     *   <li>スコアボードの目標を設定</li>
+     *   <li>全プレイヤーのスコアを0にリセット</li>
+     *   <li>ワールドにターゲットを生成</li>
+     *   <li>新しいゲームイベントリスナーを登録</li>
+     * </ul>
+     * </p>
+     * 
+     * @param sender コマンド送信者（通知メッセージの送信先）
+     * @return 初期化が成功した場合true
+     */
     @SuppressWarnings("deprecation")
     public static boolean init(CommandSender sender) {
         sender.sendMessage("§aInitializing One Shot Glory...");
@@ -80,6 +109,14 @@ public class Initializer {
         return true;
     }
 
+    /**
+     * ゲームを停止するメソッド
+     * <p>
+     * ゲームイベントリスナーを登録解除してゲームを停止します。
+     * </p>
+     * 
+     * @return 停止に成功した場合true、ゲームイベントリスナーがnullの場合false
+     */
     public static boolean stop() {
         if (gameEventListener != null) {
             gameEventListener.unRegister();
@@ -90,6 +127,16 @@ public class Initializer {
         return false;
     }
 
+    /**
+     * イベントリスナーの登録を解除するメソッド
+     * <p>
+     * ゲームイベントリスナーをサーバーから登録解除します。
+     * このメソッドはプラグインが無効化される際や、
+     * 新しいゲームセッションを開始する前に呼び出されます。
+     * </p>
+     * 
+     * @return 登録解除に成功した場合true、ゲームイベントリスナーがnullの場合false
+     */
     public static boolean unRegister() {
         if (gameEventListener != null) {
             gameEventListener.unRegister();
