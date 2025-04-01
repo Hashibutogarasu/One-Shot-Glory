@@ -4,6 +4,20 @@ plugins {
 
 group = 'com.karasu256.one_shot_glory'
 
+// バージョン情報を保存するプロパティファイルを定義
+def versionFile = file('version.properties')
+def versionProps = new Properties()
+
+// プロパティファイルが存在する場合は読み込む、存在しない場合は新規作成
+if (versionFile.exists()) {
+    versionFile.withInputStream { versionProps.load(it) }
+} else {
+    versionProps.setProperty('major', '0')
+    versionProps.setProperty('minor', '1')
+    versionProps.setProperty('patch', '0')
+    versionFile.createNewFile()
+}
+
 // ビルド番号を保存するプロパティファイルを定義
 def buildNumberFile = file('build-number.properties')
 def buildProps = new Properties()
@@ -16,11 +30,60 @@ if (buildNumberFile.exists()) {
     buildNumberFile.createNewFile()
 }
 
-// 現在のビルド番号を取得
+// 現在のバージョン情報を取得
+def majorVersion = versionProps.getProperty('major').toInteger()
+def minorVersion = versionProps.getProperty('minor').toInteger()
+def patchVersion = versionProps.getProperty('patch').toInteger()
 def buildNumber = buildProps.getProperty('buildNumber').toInteger()
 
-// バージョン番号の設定（メジャー.マイナー-build.ビルド番号）
-version = '0.1-build.' + buildNumber
+// バージョン番号の設定（メジャー.マイナー.パッチ-build.ビルド番号）
+version = "${majorVersion}.${minorVersion}.${patchVersion}-build.${buildNumber}"
+
+// バージョン更新タスク
+task updateVersion {
+    doLast {
+        def type = project.hasProperty('versionType') ? project.getProperty('versionType') : 'none'
+        
+        switch (type.toLowerCase()) {
+            case 'major':
+                majorVersion++
+                minorVersion = 0
+                patchVersion = 0
+                buildNumber = 0
+                println "Incrementing major version to ${majorVersion}.${minorVersion}.${patchVersion}"
+                break
+            case 'minor':
+                minorVersion++
+                patchVersion = 0
+                buildNumber = 0
+                println "Incrementing minor version to ${majorVersion}.${minorVersion}.${patchVersion}"
+                break
+            case 'patch':
+                patchVersion++
+                buildNumber = 0
+                println "Incrementing patch version to ${majorVersion}.${minorVersion}.${patchVersion}"
+                break
+            default:
+                // バージョンタイプが指定されていない場合はビルド番号のみをインクリメント
+                buildNumber++
+                println "Incrementing build number to ${buildNumber}"
+                break
+        }
+        
+        // 更新されたバージョン情報を保存
+        versionProps.setProperty('major', majorVersion.toString())
+        versionProps.setProperty('minor', minorVersion.toString())
+        versionProps.setProperty('patch', patchVersion.toString())
+        versionFile.withOutputStream { versionProps.store(it, "Version properties for ${project.name}") }
+        
+        buildProps.setProperty('buildNumber', buildNumber.toString())
+        buildNumberFile.withOutputStream { buildProps.store(it, "Build Number for ${project.name}") }
+        
+        // バージョン番号を更新
+        version = "${majorVersion}.${minorVersion}.${patchVersion}-build.${buildNumber}"
+        println "New version: ${version}"
+    }
+}
 
 // ビルド実行時にビルド番号をインクリメント
 task incrementBuildNumber {
@@ -29,13 +92,36 @@ task incrementBuildNumber {
         buildProps.setProperty('buildNumber', buildNumber.toString())
         buildNumberFile.withOutputStream { buildProps.store(it, "Build Number for ${project.name}") }
         println "Build number incremented to ${buildNumber}"
+        
+        // バージョン番号を更新
+        version = "${majorVersion}.${minorVersion}.${patchVersion}-build.${buildNumber}"
     }
 }
 
-// ビルドタスクの前にビルド番号をインクリメント
-tasks.named('build').configure {
-    dependsOn incrementBuildNumber
+// リリースタスク
+task release {
+    dependsOn updateVersion, build
+    description = 'Updates version according to specified type (major, minor, patch) and builds the project'
+    
+    doLast {
+        println "Released version ${version}"
+    }
 }
+
+// ビルドタスクの前にビルド番号をインクリメント（通常ビルド時）
+tasks.named('build').configure {
+    // release タスクから呼ばれた場合はビルド番号のインクリメントをスキップ
+    if (!gradle.startParameter.taskNames.contains('release')) {
+        dependsOn incrementBuildNumber
+    }
+}
+
+// リリースタスクの実行順序を設定
+release.dependsOn = []  // 既存の依存関係をクリア
+release.dependsOn 'updateVersion', 'build'
+
+// updateVersion タスクを先に実行するように設定
+build.mustRunAfter updateVersion
 
 repositories {
     mavenCentral()

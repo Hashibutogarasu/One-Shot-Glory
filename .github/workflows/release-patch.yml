@@ -1,0 +1,79 @@
+name: Create a new release (Patch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseNotes:
+        description: "Release notes"
+        required: true
+        default: "Patch version release"
+
+  push:
+    branches-ignore:
+      - "**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build with Gradle (Patch release)
+        run: ./gradlew release -PversionType=patch
+
+      - name: Extract version
+        id: extract_version
+        run: |
+          VERSION=$(grep -Po "(?<=^version=).*$" version.properties)
+          MAJOR=$(grep -Po "(?<=^major=).*$" version.properties)
+          MINOR=$(grep -Po "(?<=^minor=).*$" version.properties)
+          PATCH=$(grep -Po "(?<=^patch=).*$" version.properties)
+          FULL_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=${FULL_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          release_name: Release v${{ steps.extract_version.outputs.version }}
+          body: ${{ github.event.inputs.releaseNotes }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/libs/OneShotGlory-${{ steps.extract_version.outputs.version }}-build.0.jar
+          asset_name: OneShotGlory-${{ steps.extract_version.outputs.version }}.jar
+          asset_content_type: application/java-archive
+
+      - name: Commit version changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add version.properties build-number.properties
+          git commit -m "Bump version to v${{ steps.extract_version.outputs.version }} [skip ci]"
+          git push
