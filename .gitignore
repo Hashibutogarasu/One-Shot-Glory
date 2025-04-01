@@ -43,6 +43,7 @@ run/**
 *.properties
 !gradle-wrapper.properties
 !build-number.properties
+!version.properties
 
 # Runtime directories
 bin/
