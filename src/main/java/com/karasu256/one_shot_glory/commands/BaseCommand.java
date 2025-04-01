@@ -31,12 +31,23 @@ public class BaseCommand implements CommandExecutor, TabCompleter {
     private final Map<String, SubCommand> subCommands = new HashMap<>();
 
     /**
+     * BaseCommandのデフォルトコンストラクタ
+     * <p>
+     * 新しいBaseCommandインスタンスを初期化します。
+     * サブコマンド用の空のマップを作成します。
+     * </p>
+     */
+    public BaseCommand() {
+
+    }
+
+    /**
      * サブコマンドを登録するメソッド
      * <p>
      * 指定された名前でサブコマンドを登録します。名前は内部的に小文字に変換されます。
      * </p>
      *
-     * @param name サブコマンドの名前
+     * @param name       サブコマンドの名前
      * @param subCommand サブコマンドの実装
      */
     public void registerSubCommand(String name, SubCommand subCommand) {
@@ -50,22 +61,25 @@ public class BaseCommand implements CommandExecutor, TabCompleter {
      * サブコマンドが指定されていない場合や、存在しないサブコマンドの場合はエラーメッセージを表示します。
      * </p>
      *
-     * @param sender コマンドを実行した送信者
+     * @param sender  コマンドを実行した送信者
      * @param command 実行されたコマンド
-     * @param label 使用されたコマンドラベル
-     * @param args コマンドの引数
+     * @param label   使用されたコマンドラベル
+     * @param args    コマンドの引数
      * @return コマンドが正常に実行された場合はtrue
      */
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label,
+            String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(One_Shot_Glory.getPlugin(One_Shot_Glory.class).getLanguageManager().getMessage("commands.specify-subcommand", null));
+            sender.sendMessage(One_Shot_Glory.getPlugin(One_Shot_Glory.class).getLanguageManager()
+                    .getMessage("commands.specify-subcommand", null));
             return true;
         }
 
         SubCommand subCommand = subCommands.get(args[0].toLowerCase());
         if (subCommand == null) {
-            sender.sendMessage(One_Shot_Glory.getPlugin(One_Shot_Glory.class).getLanguageManager().getMessage("commands.unknown-subcommand", null));
+            sender.sendMessage(One_Shot_Glory.getPlugin(One_Shot_Glory.class).getLanguageManager()
+                    .getMessage("commands.unknown-subcommand", null));
             return true;
         }
 
@@ -79,14 +93,15 @@ public class BaseCommand implements CommandExecutor, TabCompleter {
      * サブコマンドが指定されている場合は、そのサブコマンドのtabCompleteメソッドを呼び出します。
      * </p>
      *
-     * @param sender タブ補完を要求した送信者
+     * @param sender  タブ補完を要求した送信者
      * @param command 実行中のコマンド
-     * @param alias 使用されたエイリアス
-     * @param args 現在入力されている引数
+     * @param alias   使用されたエイリアス
+     * @param args    現在入力されている引数
      * @return 補完候補の文字列リスト
      */
     @Override
-    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias,
+            String[] args) {
         if (args.length == 1) {
             return subCommands.keySet().stream().toList();
         }

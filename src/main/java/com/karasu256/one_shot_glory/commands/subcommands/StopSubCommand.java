@@ -19,20 +19,30 @@ import java.util.List;
  * @version 1.0
  */
 public class StopSubCommand implements SubCommand {
+
+    /**
+     * StopSubCommandクラスのデフォルトコンストラクタ
+     * <p>
+     * このクラスサブコマンドの実装を初期化します。
+     * </p>
+     */
+    public StopSubCommand() {
+
+    }
+
     /**
      * プラグインの機能を停止するコマンドを実行します
      * <p>
      * このメソッドは以下の操作を行います：
      * <ul>
-     *   <li>ユーザーの権限を確認</li>
-     *   <li>設定ファイルの有効フラグを無効に設定</li>
-     *   <li>イベントハンドラの登録を解除</li>
-     *   <li>ゲームの初期化処理を停止</li>
+     * <li>ユーザーの権限を確認</li>
+     * <li>設定ファイルの有効フラグを無効に設定</li>
+     * <li>イベントハンドラの登録を解除</li>
+     * <li>ゲームの初期化処理を停止</li>
      * </ul>
-     * </p>
      * 
      * @param sender コマンドを実行した送信者
-     * @param args コマンドの引数（このコマンドでは使用しません）
+     * @param args   コマンドの引数（このコマンドでは使用しません）
      * @return コマンドの実行が成功した場合はtrue、失敗した場合はfalse
      */
     @Override
@@ -61,7 +71,7 @@ public class StopSubCommand implements SubCommand {
      * </p>
      * 
      * @param sender タブ補完を要求した送信者
-     * @param args 現在入力されている引数
+     * @param args   現在入力されている引数
      * @return 空の補完候補リスト
      */
     @Override

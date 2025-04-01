@@ -18,19 +18,30 @@ import java.util.List;
  * @version 1.0
  */
 public class StartSubCommand implements SubCommand {
+
+    /**
+     * StartSubCommandクラスのデフォルトコンストラクタ
+     * <p>
+     * このクラスサブコマンドの実装を初期化します。
+     * </p>
+     */
+    public StartSubCommand() {
+
+    }
+
     /**
      * プラグインの機能を開始するコマンドを実行します
      * <p>
      * このメソッドは以下の操作を行います：
-     * <ul>
-     *   <li>ユーザーの権限を確認</li>
-     *   <li>設定ファイルの有効フラグを有効に設定</li>
-     *   <li>ゲームの初期化処理を実行</li>
-     * </ul>
      * </p>
+     * <ul>
+     * <li>ユーザーの権限を確認</li>
+     * <li>設定ファイルの有効フラグを有効に設定</li>
+     * <li>ゲームの初期化処理を実行</li>
+     * </ul>
      * 
      * @param sender コマンドを実行した送信者
-     * @param args コマンドの引数（このコマンドでは使用しません）
+     * @param args   コマンドの引数（このコマンドでは使用しません）
      * @return コマンドの実行が成功した場合はtrue、失敗した場合はfalse
      */
     @Override
@@ -45,7 +56,7 @@ public class StartSubCommand implements SubCommand {
 
         One_Shot_Glory.config.set("enabled", true);
         plugin.saveConfig();
-        
+
         sender.sendMessage(langManager.getMessage("commands.start.success", null));
         return Initializer.init(sender);
     }
@@ -57,7 +68,7 @@ public class StartSubCommand implements SubCommand {
      * </p>
      * 
      * @param sender タブ補完を要求した送信者
-     * @param args 現在入力されている引数
+     * @param args   現在入力されている引数
      * @return 空の補完候補リスト
      */
     @Override

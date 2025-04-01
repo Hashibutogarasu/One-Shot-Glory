@@ -20,17 +20,28 @@ import java.util.List;
  * @version 1.0
  */
 public class ConfigSubCommand implements SubCommand {
+    
+    /**
+     * ReloadConfigSubCommandクラスのデフォルトコンストラクタ
+     * <p>
+     * このクラスサブコマンドの実装を初期化します。
+     * </p>
+     */
+    public ConfigSubCommand() {
+
+    }
+
     /**
      * 設定管理コマンドを実行するメソッド
      * <p>
      * このメソッドは以下の操作を行います：
+     * </p>
      * <ul>
      *   <li>ユーザーの権限を確認</li>
      *   <li>引数が1つの場合は、指定されたプロパティの現在の値を表示</li>
      *   <li>引数が2つの場合は、指定されたプロパティに新しい値を設定</li>
      *   <li>値のタイプ（整数、真偽値、文字列）を自動判別</li>
      * </ul>
-     * </p>
      * 
      * @param sender コマンドを実行した送信者
      * @param args コマンドの引数（プロパティ名と設定値）

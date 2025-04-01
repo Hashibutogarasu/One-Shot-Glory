@@ -42,12 +42,12 @@ public class ReloadSubCommand implements SubCommand {
      * リロードコマンドを実行するメソッド
      * <p>
      * このメソッドは以下の操作を行います：
+     * </p>
      * <ul>
      *   <li>ユーザーの権限を確認</li>
      *   <li>追加の引数があれば、対応するサブコマンドへ処理を委譲</li>
      *   <li>引数がない場合は、利用可能なサブコマンドの一覧を表示</li>
      * </ul>
-     * </p>
      * 
      * @param sender コマンドを実行した送信者
      * @param args コマンドの引数

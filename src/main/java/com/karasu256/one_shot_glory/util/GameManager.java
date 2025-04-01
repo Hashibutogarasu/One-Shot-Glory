@@ -27,6 +27,16 @@ import org.bukkit.plugin.Plugin;
 public class GameManager {
 
     /**
+     * GameManagerのデフォルトコンストラクタ
+     * <p>
+     * 新しいGameManagerインスタンスを初期化します。
+     * </p>
+     */
+    private GameManager() {
+
+    }
+
+    /**
      * 指定されたワールド内のすべてのプレイヤーにターゲットを生成するメソッド
      * <p>
      * ワールド内のすべてのプレイヤーに対して個別にターゲットを生成します。
@@ -48,7 +58,7 @@ public class GameManager {
      * ランダムなバフを持つターゲットをプレイヤーに生成し、乗せます。
      * </p>
      * 
-     * @param world ターゲットを生成するワールド
+     * @param world  ターゲットを生成するワールド
      * @param player ターゲットを生成する対象のプレイヤー
      */
     public static void spawnTarget(World world, Player player) {
@@ -67,8 +77,8 @@ public class GameManager {
      * 基本的な設定を適用して頭にアイテムを装備させます。
      * </p>
      * 
-     * @param world ArmorStandを生成するワールド
-     * @param player ArmorStandの位置の基準となるプレイヤー
+     * @param world     ArmorStandを生成するワールド
+     * @param player    ArmorStandの位置の基準となるプレイヤー
      * @param itemStack ArmorStandの頭部に装備するアイテム
      * @return 生成および設定されたArmorStandエンティティ
      */
@@ -97,7 +107,7 @@ public class GameManager {
      * これにより、後でエンティティの所有者を識別できます。
      * </p>
      * 
-     * @param <T> エンティティの型
+     * @param <T>    エンティティの型
      * @param entity メタデータを設定するエンティティ
      * @param player 所有者として設定するプレイヤー
      */

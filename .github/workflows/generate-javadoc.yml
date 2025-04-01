@@ -1,0 +1,63 @@
+name: Generate and Commit JavaDoc
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:  # 手動実行も可能にする
+
+jobs:
+  check-owner:
+    uses: ./.github/workflows/check-owner-permission.yml
+    
+  generate-javadoc:
+    needs: check-owner
+    if: needs.check-owner.outputs.is_owner == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # リポジトリにコミットする権限を付与
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 完全なコミット履歴を取得
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582
+        
+      - name: Generate JavaDoc
+        run: ./gradlew javadoc
+        
+      - name: Copy JavaDoc to docs directory
+        run: |
+          mkdir -p docs
+          rm -rf docs/javadoc
+          cp -r build/docs/javadoc docs/
+          
+      - name: Commit and push JavaDoc
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          git add docs/javadoc
+          
+          if git diff --staged --quiet; then
+            echo "No changes to JavaDoc, skipping commit"
+            exit 0
+          fi
+          
+          git commit -m "自動生成: JavaDocを更新 [ci skip]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

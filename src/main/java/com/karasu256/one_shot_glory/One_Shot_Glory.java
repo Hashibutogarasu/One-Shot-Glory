@@ -34,6 +34,17 @@ public final class One_Shot_Glory extends JavaPlugin {
     private LanguageManager languageManager;
 
     /**
+     * One_Shot_Gloryクラスのデフォルトコンストラクタ
+     * <p>
+     * このクラスはユーティリティクラスであり、インスタンス化を防ぐために
+     * プライベートコンストラクタを使用します。
+     * </p>
+     */
+    private One_Shot_Glory() {
+
+    }
+
+    /**
      * プラグインが有効化された際に呼び出されるメソッド
      * <p>
      * データフォルダの作成、設定ファイルの初期化、言語マネージャーの初期化、
@@ -49,7 +60,7 @@ public final class One_Shot_Glory extends JavaPlugin {
 
         // 設定ファイルの初期化
         configFile = new File(getDataFolder(), "config.yml");
-        
+
         // 設定ファイルが存在しない場合はデフォルト設定を保存
         if (!configFile.exists()) {
             saveDefaultConfig();
@@ -57,10 +68,10 @@ public final class One_Shot_Glory extends JavaPlugin {
 
         // 設定の読み込み
         config = YamlConfiguration.loadConfiguration(configFile);
-        
+
         // 言語マネージャーの初期化
         languageManager = new LanguageManager(this);
-        
+
         // 設定の保存とコマンドの登録
         saveConfig();
         new MainCommand(this);
