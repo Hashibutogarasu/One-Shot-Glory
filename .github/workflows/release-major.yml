@@ -16,8 +16,13 @@ jobs:
   check-permission:
     uses: ./.github/workflows/check-owner-permission.yml
 
-  build:
+  # gradle.ymlワークフローを呼び出してビルドを実行
+  build-plugin:
     needs: check-permission
+    uses: ./.github/workflows/gradle.yml
+
+  build-release:
+    needs: [check-permission, build-plugin]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -40,7 +45,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build with Gradle (Major release)
-        run: ./gradlew release -PversionType=major
+        run: ./gradlew release -PversionType=major -x build
 
       - name: Extract version
         id: extract_version
@@ -51,6 +56,21 @@ jobs:
           PATCH=$(grep -Po "(?<=^patch=).*$" version.properties)
           FULL_VERSION="${MAJOR}.${MINOR}.${PATCH}"
           echo "version=${FULL_VERSION}" >> $GITHUB_OUTPUT
+      
+      # gradle.ymlワークフローからビルドされたアーティファクトをダウンロード
+      - name: Download Plugin JAR Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: One-Shot-Glory-Plugin
+          path: ./downloaded-artifacts
+
+      - name: Display downloaded artifacts
+        run: ls -la ./downloaded-artifacts
+
+      - name: Rename artifact to match version
+        run: |
+          mkdir -p ./release-artifacts
+          cp ./downloaded-artifacts/One-Shot-Glory-*-build.*.jar ./release-artifacts/OneShotGlory-${{ steps.extract_version.outputs.version }}.jar
 
       - name: Create Release
         id: create_release
@@ -70,7 +90,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/libs/OneShotGlory-${{ steps.extract_version.outputs.version }}-build.0.jar
+          asset_path: ./release-artifacts/OneShotGlory-${{ steps.extract_version.outputs.version }}.jar
           asset_name: OneShotGlory-${{ steps.extract_version.outputs.version }}.jar
           asset_content_type: application/java-archive
 
