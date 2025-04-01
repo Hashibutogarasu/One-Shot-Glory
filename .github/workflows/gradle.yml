@@ -28,32 +28,12 @@ jobs:
       - name: Build with Gradle Wrapper
         run: ./gradlew build
         
-      - name: Find JAR files
-        id: find-jars
-        shell: bash
-        run: |
-          echo "jar_files=$(find build/libs/ -name "*.jar" -type f | tr '\n' ' ')" >> $GITHUB_OUTPUT
-          echo "Found JARs: $(find build/libs/ -name "*.jar" -type f | wc -l)"
-
-      - name: Upload JAR files individually
-        if: ${{ steps.find-jars.outputs.jar_files != '' }}
-        run: |
-          for jar_file in ${{ steps.find-jars.outputs.jar_files }}; do
-            if [ -f "$jar_file" ]; then
-              filename=$(basename "$jar_file")
-              artifact_name="${filename%.jar}"
-              
-              echo "Uploading $filename as artifact: $artifact_name"
-              
-              gh workflow run .github/workflows/upload-single-jar.yml \
-                -f jar_path="$jar_file" \
-                -f artifact_name="$artifact_name"
-            else
-              echo "::warning::File not found: $jar_file"
-            fi
-          done
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: One-Shot-Glory-Plugin
+          path: build/libs/One-Shot-Glory-*-build.*.jar
+          if-no-files-found: error
 
   dependency-submission:
     runs-on: ubuntu-latest
