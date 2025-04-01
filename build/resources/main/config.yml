@@ -1,0 +1,14 @@
+# One Shot Glory Configuration
+
+# Language settings
+language:
+  default: 'en_US' # Available: en_US, ja_JP
+  
+#Randomize the targets of the items
+randomize_targets_items: true
+
+#Enable the buffs
+enable_buffs: true
+
+#Respawn set health
+respawn_set_health_delay: 15
