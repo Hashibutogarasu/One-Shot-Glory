@@ -27,6 +27,13 @@ jobs:
 
       - name: Build with Gradle Wrapper
         run: ./gradlew build
+        
+      - name: Upload Plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: One-Shot-Glory-Plugin
+          path: build/libs/One-Shot-Glory-*-build.*.jar
+          if-no-files-found: error
 
   dependency-submission:
     runs-on: ubuntu-latest
