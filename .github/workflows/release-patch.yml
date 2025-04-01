@@ -20,6 +20,9 @@ jobs:
   build-plugin:
     needs: check-permission
     uses: ./.github/workflows/gradle.yml
+    permissions:
+      actions: write
+      contents: write
 
   build-release:
     needs: [check-permission, build-plugin]
