@@ -28,12 +28,24 @@ jobs:
       - name: Build with Gradle Wrapper
         run: ./gradlew build
         
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Plugin-JARs
-          path: build/libs/*.jar
-          retention-days: 14
+      - name: List JAR files
+        id: list-jars
+        run: |
+          echo "jars=$(find build/libs/ -name "*.jar" | xargs -I{} basename {} | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          
+      - name: Upload JAR files individually
+        run: |
+          for jar in $(find build/libs/ -name "*.jar"); do
+            filename=$(basename $jar)
+            echo "Uploading $filename"
+            echo "::group::Upload $filename"
+            curl -X POST \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              --data '{"name":"'$filename'","path":"'$jar'","retention_days":14}' \
+              https://uploads.github.com/repos/${{ github.repository }}/actions/artifacts
+            echo "::endgroup::"
+          done
 
   dependency-submission:
     runs-on: ubuntu-latest
