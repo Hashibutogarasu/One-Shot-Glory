@@ -1,0 +1,26 @@
+name: Check Repository Owner Permission
+
+on:
+  workflow_call:
+    outputs:
+      is_owner:
+        description: "Whether the actor is the repository owner"
+        value: ${{ jobs.check.outputs.is_owner }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      is_owner: ${{ steps.check_owner.outputs.is_owner }}
+    steps:
+      - name: Check if user is repository owner
+        id: check_owner
+        run: |
+          if [[ "${{ github.actor }}" == "${{ github.repository_owner }}" ]]; then
+            echo "User is the repository owner, proceeding with the workflow"
+            echo "is_owner=true" >> $GITHUB_OUTPUT
+          else
+            echo "User is not the repository owner, workflow will be canceled"
+            echo "is_owner=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi

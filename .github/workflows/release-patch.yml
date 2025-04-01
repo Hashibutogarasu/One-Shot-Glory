@@ -13,7 +13,11 @@ on:
       - "**"
 
 jobs:
+  check-permission:
+    uses: ./.github/workflows/check-owner-permission.yml
+
   build:
+    needs: check-permission
     runs-on: ubuntu-latest
     permissions:
       contents: write
