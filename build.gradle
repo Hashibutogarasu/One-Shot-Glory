@@ -6,11 +6,9 @@ plugins {
 
 group = 'com.karasu256.one_shot_glory'
 
-// バージョン情報を保存するプロパティファイルを定義
 def versionFile = file('version.properties')
 def versionProps = new Properties()
 
-// プロパティファイルが存在する場合は読み込む、存在しない場合は新規作成
 if (versionFile.exists()) {
     versionFile.withInputStream { versionProps.load(it) }
 } else {
@@ -20,11 +18,9 @@ if (versionFile.exists()) {
     versionFile.createNewFile()
 }
 
-// ビルド番号を保存するプロパティファイルを定義
 def buildNumberFile = file('build-number.properties')
 def buildProps = new Properties()
 
-// プロパティファイルが存在する場合は読み込む、存在しない場合は新規作成
 if (buildNumberFile.exists()) {
     buildNumberFile.withInputStream { buildProps.load(it) }
 } else {
@@ -32,16 +28,13 @@ if (buildNumberFile.exists()) {
     buildNumberFile.createNewFile()
 }
 
-// 現在のバージョン情報を取得
 def majorVersion = versionProps.getProperty('major').toInteger()
 def minorVersion = versionProps.getProperty('minor').toInteger()
 def patchVersion = versionProps.getProperty('patch').toInteger()
 def buildNumber = buildProps.getProperty('buildNumber').toInteger()
 
-// バージョン番号の設定（メジャー.マイナー.パッチ-build.ビルド番号）
 version = "${majorVersion}.${minorVersion}.${patchVersion}-build.${buildNumber}"
 
-// バージョン更新タスク
 task updateVersion {
     doLast {
         def type = project.hasProperty('versionType') ? project.getProperty('versionType') : 'none'
@@ -66,13 +59,11 @@ task updateVersion {
                 println "Incrementing patch version to ${majorVersion}.${minorVersion}.${patchVersion}"
                 break
             default:
-                // バージョンタイプが指定されていない場合はビルド番号のみをインクリメント
                 buildNumber++
                 println "Incrementing build number to ${buildNumber}"
                 break
         }
         
-        // 更新されたバージョン情報を保存
         versionProps.setProperty('major', majorVersion.toString())
         versionProps.setProperty('minor', minorVersion.toString())
         versionProps.setProperty('patch', patchVersion.toString())
@@ -81,13 +72,11 @@ task updateVersion {
         buildProps.setProperty('buildNumber', buildNumber.toString())
         buildNumberFile.withOutputStream { buildProps.store(it, "Build Number for ${project.name}") }
         
-        // バージョン番号を更新
         version = "${majorVersion}.${minorVersion}.${patchVersion}-build.${buildNumber}"
         println "New version: ${version}"
     }
 }
 
-// ビルド実行時にビルド番号をインクリメント
 task incrementBuildNumber {
     doLast {
         buildNumber++
@@ -100,7 +89,6 @@ task incrementBuildNumber {
     }
 }
 
-// リリースタスク
 task release {
     dependsOn updateVersion, build
     description = 'Updates version according to specified type (major, minor, patch) and builds the project'
@@ -110,19 +98,31 @@ task release {
     }
 }
 
-// ビルドタスクの前にビルド番号をインクリメント（通常ビルド時）
 tasks.named('build').configure {
-    // release タスクから呼ばれた場合はビルド番号のインクリメントをスキップ
-    if (!gradle.startParameter.taskNames.contains('release')) {
+    if (!gradle.startParameter.taskNames.contains('release') 
+        && !gradle.startParameter.taskNames.any { it.contains('publish') || it == 'publishToMavenCentral' }) {
         dependsOn incrementBuildNumber
     }
 }
 
-// リリースタスクの実行順序を設定
-release.dependsOn = []  // 既存の依存関係をクリア
+task publishToMavenCentral {
+    group = 'publishing'
+    description = 'Cleans the build, creates all JARs, signs them, and publishes to Maven Central'
+    
+    dependsOn 'clean', tasks.withType(Jar), 'publish'
+    
+    tasks.named('publish').configure {
+        mustRunAfter tasks.withType(Jar)
+    }
+    
+    doLast {
+        println "Publication to Maven Central prepared for version ${version}"
+    }
+}
+
+release.dependsOn = []
 release.dependsOn 'updateVersion', 'build'
 
-// updateVersion タスクを先に実行するように設定
 build.mustRunAfter updateVersion
 
 repositories {
@@ -154,7 +154,6 @@ java {
         toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     }
     
-    // Maven Centralリリースに必要なJavadocとソースJARを追加
     withJavadocJar()
     withSourcesJar()
 }
@@ -176,24 +175,30 @@ processResources {
     }
 }
 
-tasks.register('buildJar', Jar) {
-    // archiveBaseName.setの代わりに、命名規則をMaven出版と一致させる
+jar {
     archiveBaseName.set('One-Shot-Glory')
     from sourceSets.main.output
-    dependsOn configurations.compileClasspath
 }
 
-// Maven Central公開向けにJARファイルを確実に生成するための設定
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(GroovyCompile) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(JavaExec) {
+    systemProperty 'file.encoding', 'UTF-8'
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            // jarタスクの出力を使用するのではなく、明示的にbuildJarタスクの出力を参照する
-            artifact tasks.named('buildJar')
-            artifact tasks.named('javadocJar')
-            artifact tasks.named('sourcesJar')
+            from components.java
             
             pom {
-                name = 'One-Shot Glory'
+                name = 'One-Shot-Glory'
                 description = 'A Minecraft plugin that enhances combat with one-shot mechanics'
                 url = 'https://github.com/karasu256/One-Shot-Glory'
                 
@@ -237,7 +242,44 @@ publishing {
 }
 
 signing {
-    required { gradle.taskGraph.hasTask("publish") }
     useGpgCmd()
     sign publishing.publications.mavenJava
+}
+
+tasks.withType(Sign) {
+    dependsOn tasks.withType(Jar)
+}
+
+tasks.withType(PublishToMavenRepository) {
+    mustRunAfter tasks.withType(Sign)
+}
+
+task prepareForPublish {
+    dependsOn jar, javadocJar, sourcesJar
+    doLast {
+        println "Prepared JAR files for signing and publishing."
+    }
+}
+
+task printArtifactPaths {
+    doLast {
+        publishing.publications.mavenJava.artifacts.each { artifact ->
+            println "Artifact: ${artifact.file}"
+        }
+    }
+}
+
+tasks.register('buildJar', Jar) {
+    archiveBaseName.set('One-Shot-Glory')
+    from sourceSets.main.output
+    dependsOn configurations.compileClasspath
+}
+
+tasks.named('generateMetadataFileForMavenJavaPublication') {
+    dependsOn 'buildJar'
+}
+
+tasks.register('copyJar', Copy) {
+    from buildJar
+    into 'run/plugins'
 }

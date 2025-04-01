@@ -15,7 +15,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * One-Shot Gloryプラグインのメインクラス
+ * One-Shot-Gloryプラグインのメインクラス
  * <p>
  * このクラスはOne-Shot-Gloryプラグインのエントリーポイントとなり、
  * プラグインの初期化、設定ファイルの管理、および各種機能の制御を行います。
