@@ -1,0 +1,113 @@
+name: Publish JavaDoc to docs branch
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:  # 手動実行も可能にする
+
+jobs:
+  check-owner:
+    uses: ./.github/workflows/check-owner-permission.yml
+    
+  publish-javadoc:
+    needs: check-owner
+    if: needs.check-owner.outputs.is_owner == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # リポジトリにコミットする権限を付与
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 完全なコミット履歴を取得
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        
+      - name: Generate JavaDoc
+        run: ./gradlew javadoc
+        
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      
+      - name: Check if docs branch exists
+        id: check_branch
+        run: |
+          if git ls-remote --heads origin docs | grep docs; then
+            echo "Branch exists"
+            echo "branch_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Branch does not exist"
+            echo "branch_exists=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create and publish to docs branch (New branch)
+        if: steps.check_branch.outputs.branch_exists == 'false'
+        run: |
+          # 一時ディレクトリを作成し、JavaDocをコピー
+          mkdir -p temp_docs
+          cp -r build/docs/javadoc/* temp_docs/
+          
+          # READMEファイルを作成
+          echo "# One-Shot Glory JavaDoc" > temp_docs/README.md
+          echo "" >> temp_docs/README.md
+          echo "このブランチには自動生成されたJavaDocが含まれています。" >> temp_docs/README.md
+          echo "最終更新: $(date '+%Y年%m月%d日 %H:%M:%S')" >> temp_docs/README.md
+          
+          # 新しいdocsブランチを作成
+          git checkout --orphan docs
+          git rm -rf .
+          cp -r temp_docs/* .
+          rm -rf temp_docs
+          
+          # 変更をコミットしてプッシュ
+          git add .
+          git commit -m "自動生成: JavaDocを更新 [ci skip]"
+          git push origin docs --force
+      
+      - name: Update existing docs branch
+        if: steps.check_branch.outputs.branch_exists == 'true'
+        run: |
+          # 一時ディレクトリを作成し、JavaDocをコピー
+          mkdir -p temp_docs
+          cp -r build/docs/javadoc/* temp_docs/
+          
+          # READMEファイルを作成または更新
+          echo "# One-Shot Glory JavaDoc" > temp_docs/README.md
+          echo "" >> temp_docs/README.md
+          echo "このブランチには自動生成されたJavaDocが含まれています。" >> temp_docs/README.md
+          echo "最終更新: $(date '+%Y年%m月%d日 %H:%M:%S')" >> temp_docs/README.md
+          
+          # docsブランチをチェックアウト
+          git fetch
+          git checkout docs
+          
+          # 既存のファイルを削除し、新しいJavaDocをコピー
+          git rm -rf .
+          cp -r temp_docs/* .
+          rm -rf temp_docs
+          
+          # 変更をコミットしてプッシュ
+          git add .
+          
+          if git diff --staged --quiet; then
+            echo "No changes to JavaDoc, skipping commit"
+            exit 0
+          fi
+          
+          git commit -m "自動生成: JavaDocを更新 [ci skip]"
+          git push origin docs
