@@ -294,3 +294,9 @@ tasks.register('copyJar', Copy) {
     from buildJar
     into 'run/plugins'
 }
+
+tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    options.docEncoding = 'UTF-8'
+}
