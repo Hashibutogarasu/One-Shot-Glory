@@ -16,16 +16,23 @@ jobs:
   check-permission:
     uses: ./.github/workflows/check-owner-permission.yml
 
+  # バージョンをチェックし、必要に応じて調整するワークフローを呼び出し
+  check-version:
+    needs: check-permission
+    uses: ./.github/workflows/check-version.yml
+    with:
+      versionType: "major"
+
   # gradle.ymlワークフローを呼び出してビルドを実行
   build-plugin:
-    needs: check-permission
+    needs: [check-permission, check-version]
     uses: ./.github/workflows/gradle.yml
     permissions:
       actions: write
       contents: write
 
   build-release:
-    needs: [check-permission, build-plugin]
+    needs: [check-permission, build-plugin, check-version]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -47,8 +54,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build with Gradle (Major release)
+      - name: Update version (Major release)
         run: ./gradlew release -PversionType=major -x build
+        # check-versionワークフローですでに調整済みの場合は、そのバージョンを採用する
+        if: ${{ needs.check-version.outputs.version_changed == 'false' }}
 
       - name: Extract version
         id: extract_version
@@ -58,7 +67,14 @@ jobs:
           PATCH=$(grep -Po "(?<=^patch=).*$" version.properties)
           FULL_VERSION="${MAJOR}.${MINOR}.${PATCH}"
           echo "version=${FULL_VERSION}" >> $GITHUB_OUTPUT
-
+          
+          # check-versionワークフローからのバージョンと比較して確認
+          CHECK_VERSION="${{ needs.check-version.outputs.final_version }}"
+          if [ "$CHECK_VERSION" != "" ] && [ "$CHECK_VERSION" != "$FULL_VERSION" ]; then
+            echo "Warning: Version mismatch detected. Using check-version output: $CHECK_VERSION"
+            echo "version=$CHECK_VERSION" >> $GITHUB_OUTPUT
+          fi
+      
       # gradle.ymlワークフローからビルドされたアーティファクトをダウンロード
       - name: Download Plugin JAR Artifact
         uses: actions/download-artifact@v4

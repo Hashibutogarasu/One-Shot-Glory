@@ -1,0 +1,90 @@
+name: Check Version
+
+on:
+  workflow_call:
+    inputs:
+      versionType:
+        required: true
+        type: string
+        description: "増分するバージョンのタイプ (major, minor, patch)"
+    outputs:
+      final_version:
+        description: "最終的に決定されたバージョン番号"
+        value: ${{ jobs.check-version.outputs.final_version }}
+      version_changed:
+        description: "バージョンが変更されたかどうか"
+        value: ${{ jobs.check-version.outputs.version_changed }}
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      final_version: ${{ steps.check-and-update.outputs.final_version }}
+      version_changed: ${{ steps.check-and-update.outputs.version_changed }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Calculate initial version
+        run: ./gradlew release -PversionType=${{ inputs.versionType }} -x build --dry-run
+        id: calculate_initial
+
+      - name: Extract initial version
+        id: extract_initial
+        run: |
+          MAJOR=$(grep -Po "(?<=^major=).*$" version.properties)
+          MINOR=$(grep -Po "(?<=^minor=).*$" version.properties)
+          PATCH=$(grep -Po "(?<=^patch=).*$" version.properties)
+          INITIAL_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "initial_version=${INITIAL_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Check existing tags and adjust version if needed
+        id: check-and-update
+        run: |
+          INITIAL_VERSION="${{ steps.extract_initial.outputs.initial_version }}"
+          echo "Initial calculated version: $INITIAL_VERSION"
+          
+          # 既存のタグを全て取得
+          git fetch --tags
+          EXISTING_TAGS=$(git tag -l "v*")
+          echo "Existing tags: $EXISTING_TAGS"
+          
+          MAJOR=$(grep -Po "(?<=^major=).*$" version.properties)
+          MINOR=$(grep -Po "(?<=^minor=).*$" version.properties)
+          PATCH=$(grep -Po "(?<=^patch=).*$" version.properties)
+          
+          VERSION_CHANGED="false"
+          
+          # 既存タグをチェックして重複を避ける
+          while echo "$EXISTING_TAGS" | grep -q "v${MAJOR}.${MINOR}.${PATCH}"; do
+            echo "Version v${MAJOR}.${MINOR}.${PATCH} already exists, incrementing patch version"
+            PATCH=$((PATCH + 1))
+            VERSION_CHANGED="true"
+          done
+          
+          # バージョンが変更された場合、version.propertiesを更新
+          if [ "$VERSION_CHANGED" = "true" ]; then
+            echo "Updating version.properties to ${MAJOR}.${MINOR}.${PATCH}"
+            sed -i "s/^major=.*/major=${MAJOR}/" version.properties
+            sed -i "s/^minor=.*/minor=${MINOR}/" version.properties
+            sed -i "s/^patch=.*/patch=${PATCH}/" version.properties
+          fi
+          
+          FINAL_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "final_version=${FINAL_VERSION}" >> $GITHUB_OUTPUT
+          echo "version_changed=${VERSION_CHANGED}" >> $GITHUB_OUTPUT
+          echo "Final version determined: ${FINAL_VERSION}"
