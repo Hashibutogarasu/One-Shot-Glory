@@ -4,7 +4,7 @@ plugins {
     id 'signing'
 }
 
-group = 'com.karasu256.one_shot_glory'
+group = 'com.karasu256'
 
 def versionFile = file('version.properties')
 def versionProps = new Properties()
