@@ -14,15 +14,15 @@ jobs:
             exit 1
           fi
 
-      - name: Check required secrets
+      - name: Check required env vars and secrets
         run: |
-          if [[ -z "${{ secrets.GH_USERNAME }}" ]]; then
-            echo "::error::GH_USERNAME が設定されていません。GitHub の環境変数設定で追加してください"
+          if [[ -z "${{ vars.GH_USERNAME }}" ]]; then
+            echo "::error::GH_USERNAME が環境変数として設定されていません。GitHub のリポジトリ変数設定で追加してください"
             exit 1
           fi
           
           if [[ -z "${{ secrets.GH_TOKEN }}" ]]; then
-            echo "::error::GH_TOKEN が設定されていません。GitHub の環境変数設定で追加してください"
+            echo "::error::GH_TOKEN がシークレットとして設定されていません。GitHub のシークレット設定で追加してください"
             exit 1
           fi
 
@@ -51,7 +51,7 @@ jobs:
       - name: Build and Publish with Gradle
         run: ./gradlew build publish
         env:
-          GH_USERNAME: ${{ secrets.GH_USERNAME }}
+          GH_USERNAME: ${{ vars.GH_USERNAME }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Upload Plugin JAR
