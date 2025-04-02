@@ -1,12 +1,26 @@
-name: Create a new release (Patch)
+name: Create a new release
 
 on:
   workflow_dispatch:
     inputs:
-      releaseNotes:
-        description: "Release notes"
+      versionType:
+        description: "バージョンタイプ"
         required: true
-        default: "Patch version release"
+        default: "patch"
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+      releaseNotes:
+        description: "リリースノート"
+        required: true
+        default: "リリースノート"
+      updateChangelog:
+        description: "変更履歴を更新する"
+        required: true
+        default: true
+        type: boolean
 
   push:
     branches-ignore:
@@ -16,12 +30,21 @@ jobs:
   check-permission:
     uses: ./.github/workflows/check-owner-permission.yml
 
+  # 変更履歴を更新（オプション）
+  update-changelog:
+    needs: check-permission
+    if: ${{ github.event.inputs.updateChangelog == 'true' }}
+    uses: ./.github/workflows/update-changelog.yml
+    with:
+      releaseType: ${{ github.event.inputs.versionType }}
+      customMessage: ${{ github.event.inputs.releaseNotes }}
+
   # バージョンをチェックし、必要に応じて調整するワークフローを呼び出し
   check-version:
     needs: check-permission
     uses: ./.github/workflows/check-version.yml
     with:
-      versionType: "patch"
+      versionType: ${{ github.event.inputs.versionType }}
 
   # gradle.ymlワークフローを呼び出してビルドを実行
   build-plugin:
@@ -54,8 +77,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Update version (Patch release)
-        run: ./gradlew release -PversionType=patch -x build
+      - name: Update version
+        run: ./gradlew release -PversionType=${{ github.event.inputs.versionType }} -x build
         # check-versionワークフローですでに調整済みの場合は、そのバージョンを採用する
         if: ${{ needs.check-version.outputs.version_changed == 'false' }}
 
@@ -90,6 +113,34 @@ jobs:
           mkdir -p ./release-artifacts
           cp ./downloaded-artifacts/One-Shot-Glory-*-build.*.jar ./release-artifacts/OneShotGlory-${{ steps.extract_version.outputs.version }}.jar
 
+      # CHANGELOGファイルが存在する場合、リリースノートとして使用する
+      - name: Prepare release notes
+        id: prepare_notes
+        run: |
+          RELEASE_NOTES="${{ github.event.inputs.releaseNotes }}"
+          
+          if [ -f "CHANGELOG.md" ]; then
+            echo "CHANGELOGファイルが見つかりました。内容を追加します。"
+            # 最新のバージョンセクションを抽出
+            VERSION_PATTERN="## \[v${{ steps.extract_version.outputs.version }}\]"
+            NEXT_VERSION_PATTERN="## \[v"
+            
+            # 最新バージョンのセクションを抽出
+            CHANGELOG_CONTENT=$(awk -v pattern="$VERSION_PATTERN" -v next_pattern="$NEXT_VERSION_PATTERN" '
+            $0 ~ pattern {print; found=1; next}
+            found==1 && $0 ~ next_pattern {exit}
+            found==1 {print}
+            ' CHANGELOG.md)
+            
+            if [ ! -z "$CHANGELOG_CONTENT" ]; then
+              RELEASE_NOTES="${RELEASE_NOTES}\n\n${CHANGELOG_CONTENT}"
+            fi
+          fi
+          
+          # 改行をGitHub Actionsの形式に変換
+          RELEASE_NOTES="${RELEASE_NOTES//$'\n'/%0A}"
+          echo "notes=${RELEASE_NOTES}" >> $GITHUB_OUTPUT
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -98,7 +149,7 @@ jobs:
         with:
           tag_name: v${{ steps.extract_version.outputs.version }}
           release_name: Release v${{ steps.extract_version.outputs.version }}
-          body: ${{ github.event.inputs.releaseNotes }}
+          body: ${{ steps.prepare_notes.outputs.notes }}
           draft: false
           prerelease: false
 

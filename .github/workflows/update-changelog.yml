@@ -1,0 +1,137 @@
+name: Update CHANGELOG.md
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        description: 'リリースタイプ'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - auto
+      customMessage:
+        description: 'CHANGELOGに追加するカスタムメッセージ'
+        required: false
+        default: ''
+  
+  # 他のワークフローから呼び出し可能にする
+  workflow_call:
+    inputs:
+      releaseType:
+        description: 'リリースタイプ'
+        required: true
+        type: string
+      customMessage:
+        description: 'CHANGELOGに追加するカスタムメッセージ'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 全てのコミット履歴を取得
+
+      - name: Extract version
+        id: extract_version
+        run: |
+          MAJOR=$(grep -Po "(?<=^major=).*$" version.properties || echo "0")
+          MINOR=$(grep -Po "(?<=^minor=).*$" version.properties || echo "0")
+          PATCH=$(grep -Po "(?<=^patch=).*$" version.properties || echo "0")
+          CURRENT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "current_version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+          
+          # リリースタイプに基づいて次のバージョンを計算
+          if [ "${{ inputs.releaseType }}" == "major" ]; then
+            NEXT_MAJOR=$((MAJOR + 1))
+            NEXT_VERSION="${NEXT_MAJOR}.0.0"
+          elif [ "${{ inputs.releaseType }}" == "minor" ]; then
+            NEXT_MINOR=$((MINOR + 1))
+            NEXT_VERSION="${MAJOR}.${NEXT_MINOR}.0"
+          elif [ "${{ inputs.releaseType }}" == "patch" ]; then
+            NEXT_PATCH=$((PATCH + 1))
+            NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}"
+          else
+            # autoの場合は現在のバージョンを使用
+            NEXT_VERSION="${CURRENT_VERSION}"
+          fi
+          echo "next_version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          # 最新のタグを取得（なければempty）
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            echo "latest_tag=初回リリース" >> $GITHUB_OUTPUT
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          else
+            echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate changelog content
+        id: generate_changelog
+        run: |
+          TODAY=$(date '+%Y-%m-%d')
+          echo "## [v${{ steps.extract_version.outputs.next_version }}] - ${TODAY}" > temp_changelog.md
+          echo "" >> temp_changelog.md
+          
+          # カスタムメッセージがあれば追加
+          if [ ! -z "${{ inputs.customMessage }}" ]; then
+            echo "${{ inputs.customMessage }}" >> temp_changelog.md
+            echo "" >> temp_changelog.md
+          fi
+          
+          # 最初のリリースかどうかチェック
+          if [ "${{ steps.latest_tag.outputs.tag_exists }}" == "true" ]; then
+            echo "### コミット履歴" >> temp_changelog.md
+            # 前回のタグから現在までのコミット履歴を取得
+            git log "${{ steps.latest_tag.outputs.latest_tag }}"..HEAD --pretty=format:"* %s (%h)" --no-merges >> temp_changelog.md
+          else
+            echo "### 初回リリース" >> temp_changelog.md
+            # 全てのコミット履歴を取得
+            git log --pretty=format:"* %s (%h)" --no-merges >> temp_changelog.md
+          fi
+          echo "" >> temp_changelog.md
+          echo "" >> temp_changelog.md
+
+      - name: Update CHANGELOG.md
+        run: |
+          if [ -f "CHANGELOG.md" ]; then
+            # 既存のCHANGELOGファイルがある場合は、新しい内容を先頭に追加
+            cat temp_changelog.md CHANGELOG.md > new_changelog.md
+            mv new_changelog.md CHANGELOG.md
+          else
+            # CHANGELOG.mdが存在しない場合は新規作成
+            echo "# 変更履歴" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            cat temp_changelog.md >> CHANGELOG.md
+          fi
+          rm temp_changelog.md
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add CHANGELOG.md
+          
+          # 変更があるか確認
+          if git diff --staged --quiet; then
+            echo "CHANGELOGに変更はありません。"
+            exit 0
+          fi
+          
+          git commit -m "Update CHANGELOG for v${{ steps.extract_version.outputs.next_version }} [skip ci]"
+          git push
