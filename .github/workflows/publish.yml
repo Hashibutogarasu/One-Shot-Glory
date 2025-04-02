@@ -36,6 +36,9 @@ jobs:
 
       - name: Build and Publish with Gradle
         run: ./gradlew build publish -PskipSigning=true
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Plugin JAR
         uses: actions/upload-artifact@v4
         with:
