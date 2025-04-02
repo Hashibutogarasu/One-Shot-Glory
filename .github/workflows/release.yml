@@ -35,6 +35,8 @@ jobs:
     needs: check-permission
     if: ${{ github.event.inputs.updateChangelog == 'true' }}
     uses: ./.github/workflows/update-changelog.yml
+    permissions:
+      contents: write  # この権限を追加して、コンテンツの書き込みを許可
     with:
       releaseType: ${{ github.event.inputs.versionType }}
       customMessage: ${{ github.event.inputs.releaseNotes }}
