@@ -239,6 +239,9 @@ publishing {
 }
 
 signing {
+    // skipSigningプロパティがtrueの場合は署名をスキップ
+    required = !project.hasProperty('skipSigning')
+    
     // 環境変数もしくはプロパティからの読み込み設定を追加
     def signingKey = findProperty('signingKey') ?: System.getenv('GPG_SIGNING_KEY')
     def signingPassword = findProperty('signingPassword') ?: System.getenv('GPG_SIGNING_PASSWORD')
