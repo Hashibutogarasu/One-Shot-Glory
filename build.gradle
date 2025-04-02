@@ -191,6 +191,19 @@ tasks.withType(JavaExec) {
     systemProperty 'file.encoding', 'UTF-8'
 }
 
+// パッケージの説明を設定するためのコード
+def packageDescription = ""
+if (project.hasProperty('packageProps') && new File(project.packageProps).exists()) {
+    def propsFile = new File(project.packageProps)
+    def props = new Properties()
+    propsFile.withInputStream { props.load(it) }
+    if (props.containsKey('packageDescription')) {
+        packageDescription = new String(java.util.Base64.getDecoder().decode(props.getProperty('packageDescription')))
+    }
+} else if (System.getenv('PACKAGE_ABOUT')) {
+    packageDescription = System.getenv('PACKAGE_ABOUT')
+}
+
 publishing {
     repositories {
         maven {
@@ -233,6 +246,9 @@ publishing {
                     developerConnection = 'scm:git:ssh://github.com/Hashibutogarasu/One-Shot-Glory.git'
                     url = 'https://github.com/Hashibutogarasu/One-Shot-Glory'
                 }
+                
+                // Mavenパブリケーションの設定
+                description = packageDescription ?: "One-Shot Glory Plugin"
             }
         }
     }

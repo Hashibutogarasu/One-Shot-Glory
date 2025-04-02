@@ -51,10 +51,15 @@ jobs:
         id: get_commits
         run: |
           # 最新のタグ（リリース）を取得
-          LATEST_TAG=$(git describe --tags --abbrev=0 --always)
+          LATEST_TAG=$(git describe --tags --abbrev=0 --always 2>/dev/null || echo "初回リリース")
           
-          # タグから現在までのコミットメッセージを取得
-          COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+          # 初回リリースの場合とそれ以外で処理を分ける
+          if [[ "$LATEST_TAG" == "初回リリース" ]]; then
+            COMMIT_MESSAGES=$(git log --pretty=format:"- %s" --no-merges)
+            echo "初回リリースのため、全てのコミットを表示します"
+          else
+            COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+          fi
           
           if [ -z "$COMMIT_MESSAGES" ]; then
             COMMIT_MESSAGES="- 変更なし（初回リリースまたは変更がありません）"
@@ -65,9 +70,17 @@ jobs:
           echo "最新リリースからの変更点:" >> $GITHUB_ENV
           echo "$COMMIT_MESSAGES" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+          
+          # デバッグ用にコンソールにも出力
+          echo "生成された説明文:"
+          echo "最新リリースからの変更点:"
+          echo "$COMMIT_MESSAGES"
+          
+          # build.gradleに渡すためのプロパティファイルを作成
+          echo "packageDescription=$(echo "最新リリースからの変更点:\n$COMMIT_MESSAGES" | base64 | tr -d '\n')" > package_description.properties
 
       - name: Build and Publish with Gradle
-        run: ./gradlew build publish -PskipSigning=true -PallowPublishSnapshot=true
+        run: ./gradlew build publish -PskipSigning=true -PallowPublishSnapshot=true -PpackageProps=package_description.properties
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
