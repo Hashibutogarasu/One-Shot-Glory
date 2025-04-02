@@ -100,6 +100,21 @@ jobs:
             echo "version=$CHECK_VERSION" >> $GITHUB_OUTPUT
           fi
       
+      - name: Update plugin.yml version
+        run: |
+          # plugin.ymlのバージョンを更新する
+          VERSION="${{ steps.extract_version.outputs.version }}"
+          echo "Updating plugin.yml version to ${VERSION}"
+          sed -i "s/^version: '.*'/version: '${VERSION}'/" src/main/resources/plugin.yml
+      
+      - name: Commit version changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add version.properties build-number.properties src/main/resources/plugin.yml
+          git commit -m "Bump version to v${{ steps.extract_version.outputs.version }} [skip ci]"
+          git push
+      
       # gradle.ymlワークフローからビルドされたアーティファクトをダウンロード
       - name: Download Plugin JAR Artifact
         uses: actions/download-artifact@v4
@@ -177,6 +192,5 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add version.properties build-number.properties
           git commit -m "Bump version to v${{ steps.extract_version.outputs.version }} [skip ci]"
           git push
