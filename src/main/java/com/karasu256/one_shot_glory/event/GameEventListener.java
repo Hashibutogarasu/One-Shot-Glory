@@ -157,7 +157,9 @@ public class GameEventListener implements Listener {
         // get item display from the player
         var uuid = player.getUniqueId();
         ArmorStand armorStand = player.getWorld().getEntitiesByClass(ArmorStand.class).stream()
-                .filter(entity -> entity.getMetadata("owner").get(0).asString().equals(uuid.toString()))
+                .filter(entity -> entity.hasMetadata("owner") && 
+                        !entity.getMetadata("owner").isEmpty() && 
+                        entity.getMetadata("owner").get(0).asString().equals(uuid.toString()))
                 .findFirst().orElse(null);
 
         location.setY(location.getY() + 2);
