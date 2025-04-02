@@ -52,7 +52,12 @@ public class BuffSystem {
         }
 
         var potionEffectTypes = buffType.getPotionEffectTypes();
-        var armorStand = geArmorStand(player);
+        // ArmorStandUtilsクラスを使用してアーマースタンドを取得
+        var armorStand = ArmorStandUtils.getPlayerArmorStand(player);
+        if (armorStand == null) {
+            return;
+        }
+        
         for (var potionEffectType : potionEffectTypes) {
             player.addPotionEffect(potionEffectType.createEffect(200, 1));
             armorStand.addPotionEffect(potionEffectType.createEffect(200, 1));
@@ -74,7 +79,12 @@ public class BuffSystem {
         }
 
         var potionEffectTypes = buffType.getPotionEffectTypes();
-        var armorStand = geArmorStand(player);
+        // ArmorStandUtilsクラスを使用してアーマースタンドを取得
+        var armorStand = ArmorStandUtils.getPlayerArmorStand(player);
+        if (armorStand == null) {
+            return;
+        }
+        
         for (var potionEffectType : potionEffectTypes) {
             player.removePotionEffect(potionEffectType);
             armorStand.removePotionEffect(potionEffectType);
@@ -96,23 +106,5 @@ public class BuffSystem {
         var randomIndex = (int) (Math.random() * buffTypes.length);
         var buffType = buffTypes[randomIndex];
         return new BuffSystem(buffType);
-    }
-
-    /**
-     * プレイヤーに関連付けられたArmorStandを取得する内部メソッド
-     * <p>
-     * プレイヤーのUUIDをメタデータとして持つArmorStandを
-     * プレイヤーが所属するワールドから検索し、最初に見つかったものを返します。
-     * </p>
-     * 
-     * @param player ArmorStandの所有者となるプレイヤー
-     * @return プレイヤーに関連付けられたArmorStand、または見つからない場合はnull
-     */
-    private static ArmorStand geArmorStand(Player player) {
-        var world = player.getWorld();
-
-        return world.getEntitiesByClass(ArmorStand.class).stream()
-                .filter(entity -> entity.getMetadata("owner").get(0).asString().equals(player.getUniqueId().toString()))
-                .findFirst().orElse(null);
     }
 }

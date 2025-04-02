@@ -18,6 +18,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Objective;
 
 import com.karasu256.one_shot_glory.One_Shot_Glory;
+import com.karasu256.one_shot_glory.util.ArmorStandUtils;
 import com.karasu256.one_shot_glory.util.BuffSystem;
 import com.karasu256.one_shot_glory.util.BuffType;
 import com.karasu256.one_shot_glory.util.GameManager;
@@ -102,6 +103,12 @@ public class GameEventListener implements Listener {
         // if the damaged entity is a armor stand, the owner will kill
         if (event.getEntity() instanceof ArmorStand) {
             var armorStand = (ArmorStand) event.getEntity();
+            
+            // メタデータが存在し、空でないことを確認
+            if (!armorStand.hasMetadata("owner") || armorStand.getMetadata("owner").isEmpty()) {
+                return;
+            }
+            
             var player = armorStand.getWorld().getEntitiesByClass(Player.class).stream()
                     .filter(entity -> entity.getUniqueId().toString()
                             .equals(armorStand.getMetadata("owner").get(0).asString()))
@@ -154,13 +161,8 @@ public class GameEventListener implements Listener {
         var player = event.getPlayer();
         var location = player.getLocation();
 
-        // get item display from the player
-        var uuid = player.getUniqueId();
-        ArmorStand armorStand = player.getWorld().getEntitiesByClass(ArmorStand.class).stream()
-                .filter(entity -> entity.hasMetadata("owner") && 
-                        !entity.getMetadata("owner").isEmpty() && 
-                        entity.getMetadata("owner").get(0).asString().equals(uuid.toString()))
-                .findFirst().orElse(null);
+        // ArmorStandUtilsを使用してプレイヤーのアーマースタンドを取得
+        ArmorStand armorStand = ArmorStandUtils.getPlayerArmorStand(player);
 
         location.setY(location.getY() + 2);
 
@@ -179,14 +181,11 @@ public class GameEventListener implements Listener {
      */
     @EventHandler()
     private void onPlayerDeath(PlayerDeathEvent event) {
-        // プレイヤーが死亡したときに、そのプレイヤーの上の防具立てを削除する
+        // プレイヤーが死亡したときに、そのプレイヤーのアーマースタンドを削除する
         Player player = event.getEntity();
         
-        // プレイヤーのUUIDを使って、所有者メタデータが一致する防具立てを探して削除
-        player.getWorld().getEntitiesByClass(ArmorStand.class).stream()
-                .filter(armorStand -> armorStand.hasMetadata("owner") && 
-                        armorStand.getMetadata("owner").get(0).asString().equals(player.getUniqueId().toString()))
-                .forEach(Entity::remove);
+        // ArmorStandUtilsを使用してプレイヤーのアーマースタンドを削除
+        ArmorStandUtils.removePlayerArmorStand(player);
     }
 
     /**
