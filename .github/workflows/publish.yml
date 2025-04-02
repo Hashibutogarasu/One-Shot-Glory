@@ -13,19 +13,6 @@ jobs:
             echo "::error::このワークフローはリポジトリ所有者のみ実行できます"
             exit 1
           fi
-
-      - name: Check required env vars and secrets
-        run: |
-          if [[ -z "${{ vars.GH_USERNAME }}" ]]; then
-            echo "::error::GH_USERNAME が環境変数として設定されていません。GitHub のリポジトリ変数設定で追加してください"
-            exit 1
-          fi
-
-          if [[ -z "${{ secrets.GH_TOKEN }}" ]]; then
-            echo "::error::GH_TOKEN がシークレットとして設定されていません。GitHub のシークレット設定で追加してください"
-            exit 1
-          fi
-
   publish:
     needs: check-permissions
     runs-on: ubuntu-latest
