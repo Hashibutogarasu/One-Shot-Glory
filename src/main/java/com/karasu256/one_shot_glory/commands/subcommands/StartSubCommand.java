@@ -2,7 +2,7 @@ package com.karasu256.one_shot_glory.commands.subcommands;
 
 import com.karasu256.one_shot_glory.One_Shot_Glory;
 import com.karasu256.one_shot_glory.commands.SubCommand;
-import com.karasu256.one_shot_glory.game.Initializer;
+import com.karasu256.one_shot_glory.util.GameSystemUtils;
 import org.bukkit.command.CommandSender;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +36,7 @@ public class StartSubCommand implements SubCommand {
      * </p>
      * <ul>
      * <li>ユーザーの権限を確認</li>
-     * <li>設定ファイルの有効フラグを有効に設定</li>
-     * <li>ゲームの初期化処理を実行</li>
+     * <li>GameSystemUtilsのstartGameメソッドを呼び出し</li>
      * </ul>
      * 
      * @param sender コマンドを実行した送信者
@@ -54,11 +53,7 @@ public class StartSubCommand implements SubCommand {
             return true;
         }
 
-        One_Shot_Glory.config.set("enabled", true);
-        plugin.saveConfig();
-
-        sender.sendMessage(langManager.getMessage("commands.start.success", null));
-        return Initializer.init(sender);
+        return GameSystemUtils.startGame(sender);
     }
 
     /**

@@ -1,0 +1,63 @@
+name: Publish to GitHub Packages
+
+on:
+  workflow_dispatch:  # 手動実行のみ許可
+
+jobs:
+  check-permissions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if user is repo owner
+        run: |
+          if [[ "${{ github.actor }}" != "${{ github.repository_owner }}" ]]; then
+            echo "::error::このワークフローはリポジトリ所有者のみ実行できます"
+            exit 1
+          fi
+
+      - name: Check required secrets
+        run: |
+          if [[ -z "${{ secrets.GITHUB_USERNAME }}" ]]; then
+            echo "::error::GITHUB_USERNAME が設定されていません。GitHub の環境変数設定で追加してください"
+            exit 1
+          fi
+          
+          if [[ -z "${{ secrets.GITHUB_TOKEN }}" ]]; then
+            echo "::error::GITHUB_TOKEN が設定されていません。GitHub の環境変数設定で追加してください"
+            exit 1
+          fi
+
+  publish:
+    needs: check-permissions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write  # GitHub Packages への書き込み権限を追加
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582
+
+      - name: Build and Publish with Gradle
+        run: ./gradlew build publish
+        env:
+          GITHUB_USERNAME: ${{ secrets.GITHUB_USERNAME }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: One-Shot-Glory-Plugin-Published
+          path: build/libs/One-Shot-Glory-*.jar
+          if-no-files-found: error
+          retention-days: 90  # 90日間アーティファクトを保存

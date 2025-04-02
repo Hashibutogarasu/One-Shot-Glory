@@ -2,9 +2,8 @@ package com.karasu256.one_shot_glory.commands.subcommands;
 
 import com.karasu256.one_shot_glory.One_Shot_Glory;
 import com.karasu256.one_shot_glory.commands.SubCommand;
-import com.karasu256.one_shot_glory.game.Initializer;
+import com.karasu256.one_shot_glory.util.GameSystemUtils;
 import org.bukkit.command.CommandSender;
-import org.bukkit.event.player.PlayerInteractEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,9 +35,7 @@ public class StopSubCommand implements SubCommand {
      * このメソッドは以下の操作を行います：
      * <ul>
      * <li>ユーザーの権限を確認</li>
-     * <li>設定ファイルの有効フラグを無効に設定</li>
-     * <li>イベントハンドラの登録を解除</li>
-     * <li>ゲームの初期化処理を停止</li>
+     * <li>GameSystemUtilsのstopGameメソッドを呼び出し</li>
      * </ul>
      * 
      * @param sender コマンドを実行した送信者
@@ -55,13 +52,7 @@ public class StopSubCommand implements SubCommand {
             return true;
         }
 
-        One_Shot_Glory.config.set("enabled", false);
-        plugin.saveConfig();
-
-        PlayerInteractEvent.getHandlerList().unregister(plugin);
-
-        sender.sendMessage(langManager.getMessage("commands.stop.success", null));
-        return Initializer.stop();
+        return GameSystemUtils.stopGame(sender);
     }
 
     /**

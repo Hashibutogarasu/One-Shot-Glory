@@ -21,6 +21,7 @@ import com.karasu256.one_shot_glory.One_Shot_Glory;
 import com.karasu256.one_shot_glory.util.BuffSystem;
 import com.karasu256.one_shot_glory.util.BuffType;
 import com.karasu256.one_shot_glory.util.GameManager;
+import com.karasu256.one_shot_glory.util.OSGPlayerUtils;
 
 /**
  * One-Shot-Gloryゲームでのイベントを処理するリスナークラス
@@ -76,8 +77,12 @@ public class GameEventListener implements Listener {
     private void onArrowHit(ProjectileHitEvent event) {
         if (event.getEntityType() == EntityType.ARROW) {
             var entity = event.getEntity();
-
-            entity.remove();
+            
+            // 矢の発射者が有効なプレイヤーの場合のみ矢を消去
+            if (entity.getShooter() instanceof Player shooter && 
+                OSGPlayerUtils.getEnabledList().contains(shooter)) {
+                entity.remove();
+            }
         }
     }
 
