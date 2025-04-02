@@ -68,29 +68,22 @@ public class Initializer {
 
         var server = sender.getServer();
 
-        // create a team which named "Members" and add all players to it
+        // スコアボードを取得
         var scoreboard = server.getScoreboardManager().getMainScoreboard();
 
-        var team = scoreboard.getTeam("Members");
+        // osg_enabled_players オブジェクトを作成または取得
+        final Objective enabledPlayersObjective = scoreboard.getObjective("osg_enabled_players") != null ? 
+            scoreboard.getObjective("osg_enabled_players") : 
+            scoreboard.registerNewObjective("osg_enabled_players", "dummy", "OSG Enabled Players");
 
-        if (team == null) {
-            team = scoreboard.registerNewTeam("Members");
-        }
-
-        team.setColor(ChatColor.GREEN);
-
-        Team finalTeam = team;
+        // すべてのオンラインプレイヤーを有効プレイヤーとして設定（スコア1）
         var players = server.getOnlinePlayers();
-        players.forEach(player -> finalTeam.addEntry(player.getName()));
-
-        var playersInTeam = team.getEntries();
+        players.forEach(player -> enabledPlayersObjective.getScore(player.getName()).setScore(1));
 
         // create or get a score board objective of "Score"
-        var objective = scoreboard.getObjective("Score");
-
-        if (objective == null) {
-            objective = scoreboard.registerNewObjective("Score", "dummy", "Score");
-        }
+        final Objective objective = scoreboard.getObjective("Score") != null ? 
+            scoreboard.getObjective("Score") : 
+            scoreboard.registerNewObjective("Score", "dummy", "Score");
 
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
         objective.setDisplayName("§aScore");
@@ -99,13 +92,7 @@ public class Initializer {
         objective.setDisplaySlot(DisplaySlot.PLAYER_LIST);
 
         // reset the score of all players
-        Objective finalObjective = objective;
-        playersInTeam.forEach(playerName -> {
-            var player = server.getPlayer(playerName);
-            if (player != null) {
-                finalObjective.getScore(playerName).setScore(0);
-            }
-        });
+        players.forEach(player -> objective.getScore(player.getName()).setScore(0));
 
         GameManager.spawnTarget(server.getWorld("world"));
 
