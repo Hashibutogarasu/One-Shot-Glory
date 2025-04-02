@@ -19,11 +19,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-
-    env:
-      GH_USERNAME: ${{ vars.GH_USERNAME }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
     steps:
       - uses: actions/checkout@v4
 
@@ -41,10 +36,6 @@ jobs:
 
       - name: Build and Publish with Gradle
         run: ./gradlew build publish -PskipSigning=true
-        env:
-          GH_USERNAME: ${{ vars.GH_USERNAME }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
       - name: Upload Plugin JAR
         uses: actions/upload-artifact@v4
         with:

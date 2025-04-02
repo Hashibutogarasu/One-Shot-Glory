@@ -197,8 +197,8 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/Hashibutogarasu/One-Shot-Glory")
             credentials {
-                username = findProperty('gpr.user') ?: System.getenv("USERNAME")
-                password = findProperty('gpr.key') ?: System.getenv("TOKEN")
+                username = findProperty('gpr.user') ?: System.getenv("GITHUB_ACTOR")
+                password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }
