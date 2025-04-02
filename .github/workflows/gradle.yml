@@ -17,6 +17,8 @@ jobs:
     permissions:
       contents: read
       actions: write  # アーティファクトに書き込む権限を追加
+    outputs:
+      build_executed: ${{ steps.check_changes.outputs.build_executed }}
 
     steps:
       - uses: actions/checkout@v4
@@ -73,6 +75,22 @@ jobs:
 
   dependency-submission:
     runs-on: ubuntu-latest
+    needs: build
+    if: needs.build.outputs.build_executed == 'true'
     permissions:
       contents: write
-    if: github.event_name != 'workflow_call' || contains(github.event.head_commit.modified, 'src/')
+
+    steps:
+      - uses: actions/checkout@v4
+        if: needs.build.outputs.build_executed == 'true'
+      
+      - name: Set up JDK 17
+        if: needs.build.outputs.build_executed == 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Generate and submit dependency graph
+        if: needs.build.outputs.build_executed == 'true'
+        uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582
