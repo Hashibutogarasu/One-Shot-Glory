@@ -3,8 +3,12 @@ name: Generate and Commit JavaDoc
 on:
   push:
     branches: ["main"]
+    paths:
+      - 'build-number.properties'
   pull_request:
     branches: ["main"]
+    paths:
+      - 'build-number.properties'
   workflow_dispatch:  # 手動実行も可能にする
 
 jobs:
@@ -24,28 +28,64 @@ jobs:
         with:
           fetch-depth: 0  # 完全なコミット履歴を取得
       
+      - name: Get latest release tag
+        id: latest_release
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No tags found, will generate JavaDoc"
+            echo "should_generate=true" >> $GITHUB_OUTPUT
+          else
+            echo "Latest release tag: $LATEST_TAG"
+            echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+            echo "should_generate=check" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for build-number.properties changes
+        if: steps.latest_release.outputs.should_generate == 'check'
+        id: check_changes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "Manual workflow dispatch, will generate JavaDoc"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            if git diff --name-only ${{ steps.latest_release.outputs.latest_tag }} HEAD | grep -q "build-number.properties"; then
+              echo "build-number.properties has changed since ${{ steps.latest_release.outputs.latest_tag }}"
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "No changes to build-number.properties since ${{ steps.latest_release.outputs.latest_tag }}"
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+      
       - name: Make gradlew executable
+        if: steps.latest_release.outputs.should_generate == 'true' || steps.check_changes.outputs.has_changes == 'true'
         run: chmod +x ./gradlew
         
       - name: Set up JDK 17
+        if: steps.latest_release.outputs.should_generate == 'true' || steps.check_changes.outputs.has_changes == 'true'
         uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "temurin"
           
       - name: Setup Gradle
+        if: steps.latest_release.outputs.should_generate == 'true' || steps.check_changes.outputs.has_changes == 'true'
         uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582
         
       - name: Generate JavaDoc
+        if: steps.latest_release.outputs.should_generate == 'true' || steps.check_changes.outputs.has_changes == 'true'
         run: ./gradlew javadoc
         
       - name: Copy JavaDoc to docs directory
+        if: steps.latest_release.outputs.should_generate == 'true' || steps.check_changes.outputs.has_changes == 'true'
         run: |
           mkdir -p docs
           rm -rf docs/javadoc
           cp -r build/docs/javadoc docs/
           
       - name: Commit and push JavaDoc
+        if: steps.latest_release.outputs.should_generate == 'true' || steps.check_changes.outputs.has_changes == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
