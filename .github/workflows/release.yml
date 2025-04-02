@@ -106,9 +106,12 @@ jobs:
         with:
           name: One-Shot-Glory-Plugin
           path: ./downloaded-artifacts
+        continue-on-error: false
 
       - name: Display downloaded artifacts
-        run: ls -la ./downloaded-artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          ls -la ./downloaded-artifacts || echo "No artifacts found"
 
       - name: Copy and get artifact filename
         id: get_artifact

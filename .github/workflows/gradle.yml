@@ -69,7 +69,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: One-Shot-Glory-Plugin
-          path: build/libs/One-Shot-Glory-*-build.*.jar
+          path: |
+            build/libs/One-Shot-Glory-*.jar
+            !build/libs/*-javadoc.jar
+            !build/libs/*-sources.jar
           if-no-files-found: error
           retention-days: 90  # 90日間アーティファクトを保存
 
