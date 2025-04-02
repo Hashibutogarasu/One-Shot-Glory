@@ -58,21 +58,25 @@ jobs:
       - name: Create and publish to docs branch (New branch)
         if: steps.check_branch.outputs.branch_exists == 'false'
         run: |
-          # 一時ディレクトリを作成し、JavaDocをコピー
-          mkdir -p temp_docs
-          cp -r build/docs/javadoc/* temp_docs/
+          # JavaDocを別のディレクトリにコピー
+          mkdir -p ../javadoc_temp
+          cp -r build/docs/javadoc/* ../javadoc_temp/
           
           # READMEファイルを作成
-          echo "# One-Shot Glory JavaDoc" > temp_docs/README.md
-          echo "" >> temp_docs/README.md
-          echo "このブランチには自動生成されたJavaDocが含まれています。" >> temp_docs/README.md
-          echo "最終更新: $(date '+%Y年%m月%d日 %H:%M:%S')" >> temp_docs/README.md
+          echo "# One-Shot Glory JavaDoc" > ../javadoc_temp/README.md
+          echo "" >> ../javadoc_temp/README.md
+          echo "このブランチには自動生成されたJavaDocが含まれています。" >> ../javadoc_temp/README.md
+          echo "最終更新: $(date '+%Y年%m月%d日 %H:%M:%S')" >> ../javadoc_temp/README.md
           
-          # 新しいdocsブランチを作成
+          # 変更をリセットしてから新しいブランチを作成
+          git reset --hard
+          git clean -fd
           git checkout --orphan docs
+          
+          # ワーキングディレクトリをクリアして新しいファイルをコピー
           git rm -rf .
-          cp -r temp_docs/* .
-          rm -rf temp_docs
+          cp -r ../javadoc_temp/* .
+          rm -rf ../javadoc_temp
           
           # 変更をコミットしてプッシュ
           git add .
@@ -82,24 +86,27 @@ jobs:
       - name: Update existing docs branch
         if: steps.check_branch.outputs.branch_exists == 'true'
         run: |
-          # 一時ディレクトリを作成し、JavaDocをコピー
-          mkdir -p temp_docs
-          cp -r build/docs/javadoc/* temp_docs/
+          # JavaDocを別のディレクトリにコピー
+          mkdir -p ../javadoc_temp
+          cp -r build/docs/javadoc/* ../javadoc_temp/
           
           # READMEファイルを作成または更新
-          echo "# One-Shot Glory JavaDoc" > temp_docs/README.md
-          echo "" >> temp_docs/README.md
-          echo "このブランチには自動生成されたJavaDocが含まれています。" >> temp_docs/README.md
-          echo "最終更新: $(date '+%Y年%m月%d日 %H:%M:%S')" >> temp_docs/README.md
+          echo "# One-Shot Glory JavaDoc" > ../javadoc_temp/README.md
+          echo "" >> ../javadoc_temp/README.md
+          echo "このブランチには自動生成されたJavaDocが含まれています。" >> ../javadoc_temp/README.md
+          echo "最終更新: $(date '+%Y年%m月%d日 %H:%M:%S')" >> ../javadoc_temp/README.md
           
-          # docsブランチをチェックアウト
+          # 変更をリセットしてからdocsブランチをチェックアウト
+          git reset --hard
+          git clean -fd
           git fetch origin
-          git checkout -b docs --track origin/docs
+          git checkout -b docs --track origin/docs || git checkout -f docs
+          git pull origin docs
           
           # 既存のファイルを削除し、新しいJavaDocをコピー
-          git rm -rf --ignore-unmatch *
-          cp -r temp_docs/* .
-          rm -rf temp_docs
+          find . -mindepth 1 -not -path "./.git*" -delete
+          cp -r ../javadoc_temp/* .
+          rm -rf ../javadoc_temp
           
           # 変更をコミットしてプッシュ
           git add .
