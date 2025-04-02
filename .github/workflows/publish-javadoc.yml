@@ -77,7 +77,7 @@ jobs:
           # 変更をコミットしてプッシュ
           git add .
           git commit -m "自動生成: JavaDocを更新 [ci skip]"
-          git push origin docs --force
+          git push -u origin HEAD:docs --force
       
       - name: Update existing docs branch
         if: steps.check_branch.outputs.branch_exists == 'true'
@@ -93,11 +93,11 @@ jobs:
           echo "最終更新: $(date '+%Y年%m月%d日 %H:%M:%S')" >> temp_docs/README.md
           
           # docsブランチをチェックアウト
-          git fetch
-          git checkout -f origin/docs  # 明示的にリモートブランチを指定し、強制的にチェックアウト
+          git fetch origin
+          git checkout -b docs --track origin/docs
           
           # 既存のファイルを削除し、新しいJavaDocをコピー
-          git rm -rf .
+          git rm -rf --ignore-unmatch *
           cp -r temp_docs/* .
           rm -rf temp_docs
           
@@ -110,4 +110,4 @@ jobs:
           fi
           
           git commit -m "自動生成: JavaDocを更新 [ci skip]"
-          git push origin docs
+          git push -u origin docs
