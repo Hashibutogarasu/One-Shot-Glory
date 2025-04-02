@@ -115,6 +115,17 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">指定されたプレイヤーのアーマースタンドを取得するメソッド</div>
 </div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#isPlayerOwnedArmorStand(org.bukkit.entity.Entity,org.bukkit.entity.Player)" class="member-name-link">isPlayerOwnedArmorStand</a><wbr>(org.bukkit.entity.Entity&nbsp;entity,
+ org.bukkit.entity.Player&nbsp;player)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">エンティティがこのプラグインによって作成され、指定されたプレイヤーが所有するアーマースタンドかどうかを判定するメソッド</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#isPluginArmorStand(org.bukkit.entity.Entity)" class="member-name-link">isPluginArmorStand</a><wbr>(org.bukkit.entity.Entity&nbsp;entity)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">エンティティがこのプラグインによって作成されたアーマースタンドかどうかを判定するメソッド</div>
+</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static int</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#removeAllArmorStands()" class="member-name-link">removeAllArmorStands</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
@@ -157,6 +168,8 @@ loadScripts(document, 'script');</script>
  <p>
  プレイヤーに関連付けられたアーマースタンドをキャッシュから取得し、
  キャッシュにない場合はワールド内を検索します。
+ プラグイン固有のIDメタデータを確認して、このプラグインが生成した
+ アーマースタンドのみを対象とします。
  </p></div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -176,6 +189,7 @@ loadScripts(document, 'script');</script>
  <p>
  指定されたプレイヤーの位置に不可視のアーマースタンドを生成し、
  基本的な設定を適用して頭にアイテムを装備させます。
+ プレイヤーに既にアーマースタンドが乗っている場合は、それを削除します。
  </p></div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -208,6 +222,41 @@ loadScripts(document, 'script');</script>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>削除されたアーマースタンドの数</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="isPluginArmorStand(org.bukkit.entity.Entity)">
+<h3>isPluginArmorStand</h3>
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isPluginArmorStand</span><wbr><span class="parameters">(org.bukkit.entity.Entity&nbsp;entity)</span></div>
+<div class="block">エンティティがこのプラグインによって作成されたアーマースタンドかどうかを判定するメソッド
+ <p>
+ エンティティがアーマースタンドであり、かつプラグイン固有のIDメタデータを持っているかを確認します。
+ </p></div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>entity</code> - 判定するエンティティ</dd>
+<dt>Returns:</dt>
+<dd>このプラグインによって作成されたアーマースタンドであればtrue、そうでなければfalse</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="isPlayerOwnedArmorStand(org.bukkit.entity.Entity,org.bukkit.entity.Player)">
+<h3>isPlayerOwnedArmorStand</h3>
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isPlayerOwnedArmorStand</span><wbr><span class="parameters">(org.bukkit.entity.Entity&nbsp;entity,
+ org.bukkit.entity.Player&nbsp;player)</span></div>
+<div class="block">エンティティがこのプラグインによって作成され、指定されたプレイヤーが所有するアーマースタンドかどうかを判定するメソッド
+ <p>
+ エンティティがアーマースタンドであり、プラグイン固有のIDメタデータを持ち、
+ かつ指定されたプレイヤーが所有者として設定されているかを確認します。
+ </p></div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>entity</code> - 判定するエンティティ</dd>
+<dd><code>player</code> - 所有者と想定されるプレイヤー</dd>
+<dt>Returns:</dt>
+<dd>このプラグインによって作成され、指定されたプレイヤーが所有するアーマースタンドであればtrue、そうでなければfalse</dd>
 </dl>
 </section>
 </li>
