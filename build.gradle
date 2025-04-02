@@ -239,23 +239,31 @@ publishing {
 }
 
 signing {
-    // skipSigningプロパティがtrueの場合は署名をスキップ
-    required = !project.hasProperty('skipSigning')
-    
-    // 環境変数もしくはプロパティからの読み込み設定を追加
+    // キーが利用可能かどうかをチェック
     def signingKey = findProperty('signingKey') ?: System.getenv('GPG_SIGNING_KEY')
     def signingPassword = findProperty('signingPassword') ?: System.getenv('GPG_SIGNING_PASSWORD')
+    def hasSigningKeys = signingKey && signingPassword
     
-    if (signingKey && signingPassword) {
+    // skipSigningプロパティがtrueの場合または署名キーがない場合は署名をスキップ
+    required = !project.hasProperty('skipSigning') && hasSigningKeys
+    
+    if (hasSigningKeys) {
         useInMemoryPgpKeys(signingKey, signingPassword)
-    } else {
-        useGpgCmd() // GPGコマンドを使う場合はこちらを残す
+    } else if (required) {
+        // キーがないがrequiredがtrueの場合にのみGPGコマンドを試す
+        useGpgCmd()
     }
     
     sign publishing.publications.mavenJava
 }
 
+// signMavenJavaPublicationタスクが存在する場合のみ実行されるようにする
 tasks.withType(Sign) {
+    onlyIf { 
+        def signingKey = findProperty('signingKey') ?: System.getenv('GPG_SIGNING_KEY')
+        def signingPassword = findProperty('signingPassword') ?: System.getenv('GPG_SIGNING_PASSWORD')
+        return signingKey && signingPassword || project.hasProperty('useGpg') 
+    }
     dependsOn tasks.withType(Jar)
 }
 
