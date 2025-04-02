@@ -31,7 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # GitHub Packages への書き込み権限を追加
+      packages: write
+
+    env:
+      GH_USERNAME: ${{ vars.GH_USERNAME }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
