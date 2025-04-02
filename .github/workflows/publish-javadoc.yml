@@ -94,7 +94,7 @@ jobs:
           
           # docsブランチをチェックアウト
           git fetch
-          git checkout docs
+          git checkout -f origin/docs  # 明示的にリモートブランチを指定し、強制的にチェックアウト
           
           # 既存のファイルを削除し、新しいJavaDocをコピー
           git rm -rf .
