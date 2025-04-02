@@ -206,6 +206,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+            artifactId = 'one-shot-glory'
             
             pom {
                 name = 'One-Shot-Glory'
