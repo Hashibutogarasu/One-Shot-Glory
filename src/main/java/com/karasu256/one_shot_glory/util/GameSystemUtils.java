@@ -18,6 +18,13 @@ import org.bukkit.event.player.PlayerInteractEvent;
 public class GameSystemUtils {
 
     /**
+     * GameSystemUtilsクラスのデフォルトコンストラクタ
+     */
+    public GameSystemUtils() {
+
+    }
+
+    /**
      * ゲームを開始するメソッド
      * <p>
      * 設定ファイルの有効フラグを有効に設定し、ゲームの初期化処理を実行します。
@@ -29,14 +36,14 @@ public class GameSystemUtils {
     public static boolean startGame(CommandSender sender) {
         One_Shot_Glory plugin = One_Shot_Glory.getPlugin(One_Shot_Glory.class);
         var langManager = plugin.getLanguageManager();
-        
+
         One_Shot_Glory.config.set("enabled", true);
         plugin.saveConfig();
-        
+
         sender.sendMessage(langManager.getMessage("commands.start.success", null));
         return Initializer.init(sender);
     }
-    
+
     /**
      * ゲームを停止するメソッド
      * <p>
@@ -50,12 +57,12 @@ public class GameSystemUtils {
     public static boolean stopGame(CommandSender sender) {
         One_Shot_Glory plugin = One_Shot_Glory.getPlugin(One_Shot_Glory.class);
         var langManager = plugin.getLanguageManager();
-        
+
         One_Shot_Glory.config.set("enabled", false);
         plugin.saveConfig();
-        
+
         PlayerInteractEvent.getHandlerList().unregister(plugin);
-        
+
         sender.sendMessage(langManager.getMessage("commands.stop.success", null));
         return Initializer.stop();
     }

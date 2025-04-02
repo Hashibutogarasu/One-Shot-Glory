@@ -16,6 +16,13 @@ public class OSGPlayerUtils {
     private static List<Player> enabledList = new ArrayList<>();
 
     /**
+     * OSGPlayerUtilsのデフォルトコンストラクタ
+     */
+    public OSGPlayerUtils(){
+
+    }
+
+    /**
      * 特定のプレイヤーのみにこのプラグインのシステムを有効化させます。
      * 
      * @param player 有効にするプレイヤー
