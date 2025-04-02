@@ -16,13 +16,13 @@ jobs:
 
       - name: Check required secrets
         run: |
-          if [[ -z "${{ secrets.GITHUB_USERNAME }}" ]]; then
-            echo "::error::GITHUB_USERNAME が設定されていません。GitHub の環境変数設定で追加してください"
+          if [[ -z "${{ secrets.GH_USERNAME }}" ]]; then
+            echo "::error::GH_USERNAME が設定されていません。GitHub の環境変数設定で追加してください"
             exit 1
           fi
           
-          if [[ -z "${{ secrets.GITHUB_TOKEN }}" ]]; then
-            echo "::error::GITHUB_TOKEN が設定されていません。GitHub の環境変数設定で追加してください"
+          if [[ -z "${{ secrets.GH_TOKEN }}" ]]; then
+            echo "::error::GH_TOKEN が設定されていません。GitHub の環境変数設定で追加してください"
             exit 1
           fi
 
@@ -51,8 +51,8 @@ jobs:
       - name: Build and Publish with Gradle
         run: ./gradlew build publish
         env:
-          GITHUB_USERNAME: ${{ secrets.GITHUB_USERNAME }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_USERNAME: ${{ secrets.GH_USERNAME }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Upload Plugin JAR
         uses: actions/upload-artifact@v4
