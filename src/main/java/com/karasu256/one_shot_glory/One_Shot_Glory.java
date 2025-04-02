@@ -35,12 +35,8 @@ public final class One_Shot_Glory extends JavaPlugin {
 
     /**
      * One_Shot_Gloryクラスのデフォルトコンストラクタ
-     * <p>
-     * このクラスはユーティリティクラスであり、インスタンス化を防ぐために
-     * プライベートコンストラクタを使用します。
-     * </p>
      */
-    private One_Shot_Glory() {
+    public One_Shot_Glory() {
 
     }
 
