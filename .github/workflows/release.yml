@@ -110,10 +110,15 @@ jobs:
       - name: Display downloaded artifacts
         run: ls -la ./downloaded-artifacts
 
-      - name: Rename artifact to match version
+      - name: Copy and get artifact filename
+        id: get_artifact
         run: |
           mkdir -p ./release-artifacts
-          cp ./downloaded-artifacts/One-Shot-Glory-*-build.*.jar ./release-artifacts/OneShotGlory-${{ steps.extract_version.outputs.version }}.jar
+          ARTIFACT_FILE=$(ls ./downloaded-artifacts/One-Shot-Glory-*.jar | head -n 1)
+          cp "$ARTIFACT_FILE" ./release-artifacts/
+          ARTIFACT_FILENAME=$(basename "$ARTIFACT_FILE")
+          echo "filename=$ARTIFACT_FILENAME" >> $GITHUB_OUTPUT
+          echo "Found artifact: $ARTIFACT_FILENAME"
 
       # CHANGELOGファイルが存在する場合、リリースノートとして使用する
       - name: Prepare release notes
@@ -161,8 +166,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release-artifacts/OneShotGlory-${{ steps.extract_version.outputs.version }}.jar
-          asset_name: OneShotGlory-${{ steps.extract_version.outputs.version }}.jar
+          asset_path: ./release-artifacts/${{ steps.get_artifact.outputs.filename }}
+          asset_name: ${{ steps.get_artifact.outputs.filename }}
           asset_content_type: application/java-archive
 
       - name: Commit version changes
