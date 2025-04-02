@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.karasu256.one_shot_glory"},{"l":"com.karasu256.one_shot_glory.commands"},{"l":"com.karasu256.one_shot_glory.commands.subcommands"},{"l":"com.karasu256.one_shot_glory.event"},{"l":"com.karasu256.one_shot_glory.game"},{"l":"com.karasu256.one_shot_glory.util"}];updateSearchResults();
