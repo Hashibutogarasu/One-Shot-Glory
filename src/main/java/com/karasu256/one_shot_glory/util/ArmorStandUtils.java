@@ -50,6 +50,8 @@ public class ArmorStandUtils {
      * <p>
      * プレイヤーに関連付けられたアーマースタンドをキャッシュから取得し、
      * キャッシュにない場合はワールド内を検索します。
+     * プラグイン固有のIDメタデータを確認して、このプラグインが生成した
+     * アーマースタンドのみを対象とします。
      * </p>
      * 
      * @param player アーマースタンドを取得するプレイヤー
@@ -74,7 +76,10 @@ public class ArmorStandUtils {
         ArmorStand armorStand = world.getEntitiesByClass(ArmorStand.class).stream()
                 .filter(entity -> entity.hasMetadata("owner") && 
                         !entity.getMetadata("owner").isEmpty() && 
-                        entity.getMetadata("owner").get(0).asString().equals(playerUuid.toString()))
+                        entity.getMetadata("owner").get(0).asString().equals(playerUuid.toString()) &&
+                        entity.hasMetadata("id") &&
+                        !entity.getMetadata("id").isEmpty() &&
+                        entity.getMetadata("id").get(0).asString().equals("armor_stand"))
                 .findFirst().orElse(null);
         
         // キャッシュに追加
@@ -90,6 +95,7 @@ public class ArmorStandUtils {
      * <p>
      * 指定されたプレイヤーの位置に不可視のアーマースタンドを生成し、
      * 基本的な設定を適用して頭にアイテムを装備させます。
+     * プレイヤーに既にアーマースタンドが乗っている場合は、それを削除します。
      * </p>
      * 
      * @param world     アーマースタンドを生成するワールド
@@ -101,6 +107,28 @@ public class ArmorStandUtils {
         // 既存のアーマースタンドを削除
         removePlayerArmorStand(player);
         
+        // プレイヤーに乗っているPassengerをチェック
+        for (Entity passenger : player.getPassengers()) {
+            if (passenger instanceof ArmorStand) {
+                ArmorStand passengerArmorStand = (ArmorStand) passenger;
+                if (passengerArmorStand.hasMetadata("owner") && 
+                    !passengerArmorStand.getMetadata("owner").isEmpty() &&
+                    passengerArmorStand.getMetadata("owner").get(0).asString().equals(player.getUniqueId().toString()) &&
+                    passengerArmorStand.hasMetadata("id") &&
+                    !passengerArmorStand.getMetadata("id").isEmpty() &&
+                    passengerArmorStand.getMetadata("id").get(0).asString().equals("armor_stand")) {
+                    
+                    // プラグインが所有するアーマースタンドであれば削除
+                    player.removePassenger(passengerArmorStand);
+                    passengerArmorStand.remove();
+                    
+                    // キャッシュとリストからも削除
+                    playerArmorStandMap.remove(player.getUniqueId());
+                    managedArmorStands.remove(passengerArmorStand);
+                }
+            }
+        }
+        
         // 新しいアーマースタンドを生成
         ArmorStand armorStand = (ArmorStand) world.spawnEntity(
                 player.getLocation().add(0, 2, 0),
@@ -111,6 +139,8 @@ public class ArmorStandUtils {
         armorStand.setGravity(false);
         armorStand.setRemoveWhenFarAway(true);
         armorStand.setSmall(true);
+        armorStand.setMetadata("id", new FixedMetadataValue(One_Shot_Glory.getPlugin(), "armor_stand"));
+        armorStand.setMetadata("owner", new FixedMetadataValue(One_Shot_Glory.getPlugin(), player.getUniqueId().toString()));
 
         setOwnerMetadata(armorStand, player);
         armorStand.setItem(EquipmentSlot.HEAD, itemStack);
@@ -177,5 +207,45 @@ public class ArmorStandUtils {
         Plugin plugin = One_Shot_Glory.getPlugin();
         String id = player.getUniqueId().toString();
         entity.setMetadata("owner", new FixedMetadataValue(plugin, id));
+    }
+
+    /**
+     * エンティティがこのプラグインによって作成されたアーマースタンドかどうかを判定するメソッド
+     * <p>
+     * エンティティがアーマースタンドであり、かつプラグイン固有のIDメタデータを持っているかを確認します。
+     * </p>
+     * 
+     * @param entity 判定するエンティティ
+     * @return このプラグインによって作成されたアーマースタンドであればtrue、そうでなければfalse
+     */
+    public static boolean isPluginArmorStand(Entity entity) {
+        if (!(entity instanceof ArmorStand)) {
+            return false;
+        }
+        
+        return entity.hasMetadata("id") && 
+               !entity.getMetadata("id").isEmpty() && 
+               entity.getMetadata("id").get(0).asString().equals("armor_stand");
+    }
+
+    /**
+     * エンティティがこのプラグインによって作成され、指定されたプレイヤーが所有するアーマースタンドかどうかを判定するメソッド
+     * <p>
+     * エンティティがアーマースタンドであり、プラグイン固有のIDメタデータを持ち、
+     * かつ指定されたプレイヤーが所有者として設定されているかを確認します。
+     * </p>
+     * 
+     * @param entity 判定するエンティティ
+     * @param player 所有者と想定されるプレイヤー
+     * @return このプラグインによって作成され、指定されたプレイヤーが所有するアーマースタンドであればtrue、そうでなければfalse
+     */
+    public static boolean isPlayerOwnedArmorStand(Entity entity, Player player) {
+        if (!isPluginArmorStand(entity)) {
+            return false;
+        }
+        
+        return entity.hasMetadata("owner") && 
+               !entity.getMetadata("owner").isEmpty() && 
+               entity.getMetadata("owner").get(0).asString().equals(player.getUniqueId().toString());
     }
 }
