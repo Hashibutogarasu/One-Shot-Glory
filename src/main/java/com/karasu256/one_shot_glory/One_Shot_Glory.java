@@ -34,13 +34,6 @@ public final class One_Shot_Glory extends JavaPlugin {
     private LanguageManager languageManager;
 
     /**
-     * One_Shot_Gloryクラスのデフォルトコンストラクタ
-     */
-    public One_Shot_Glory() {
-
-    }
-
-    /**
      * プラグインが有効化された際に呼び出されるメソッド
      * <p>
      * データフォルダの作成、設定ファイルの初期化、言語マネージャーの初期化、
