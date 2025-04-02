@@ -14,25 +14,32 @@ import org.bukkit.entity.Player;
 public class OSGPlayerUtils {
     /** One-Shot-Gloryのシステムが有効なプレイヤーのリスト */
     private static List<Player> enabledList = new ArrayList<>();
-    
+
     /**
      * 特定のプレイヤーのみにこのプラグインのシステムを有効化させます。
+     * 
      * @param player 有効にするプレイヤー
      */
-    public static void enableOneShotSystemForPlayer(Player player){
-
+    public static void enableOneShotSystemForPlayer(Player player) {
+        if (!enabledList.contains(player)) {
+            enabledList.add(player);
+        }
     }
 
     /**
      * 特定のプレイヤーのみにこのプラグインのシステムを無効化させます。
+     * 
      * @param player 無効にするプレイヤー
      */
-    public static void disableOneShotSystemForPlayer(Player player){
-
+    public static void disableOneShotSystemForPlayer(Player player) {
+        if (enabledList.contains(player)) {
+            enabledList.remove(player);
+        }
     }
 
     /**
      * 有効化されているプレイヤーのリストを取得します。
+     * 
      * @return プレイヤーのリスト
      */
     public static List<Player> getEnabledList() {
