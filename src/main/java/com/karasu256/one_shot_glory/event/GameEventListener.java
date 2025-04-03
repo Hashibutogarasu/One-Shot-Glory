@@ -1,5 +1,9 @@
 package com.karasu256.one_shot_glory.event;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -50,6 +54,12 @@ public class GameEventListener implements Listener {
      * アーマースタンドの当たり判定を更新するタスクのスケジューラーID
      */
     private int collisionCheckTaskId = -1;
+
+    /** 当たり判定更新時の同期ロック用オブジェクト */
+    private static final Object collisionLock = new Object();
+
+    /** アーマースタンドのコリジョン状態を保持するマップ */
+    private static final Map<UUID, Boolean> armorStandCollisionStates = new ConcurrentHashMap<>();
 
     /**
      * GameEventListenerのコンストラクタ
@@ -124,29 +134,34 @@ public class GameEventListener implements Listener {
         var plugin = One_Shot_Glory.getPlugin();
         if (plugin != null) {
             collisionCheckTaskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-                for (World world : plugin.getServer().getWorlds()) {
-                    // 全てのプレイヤーに対して処理
-                    for (Player player : world.getPlayers()) {
-                        // プレイヤーが弓を持っているか確認
-                        if (player.getInventory().getItemInMainHand().getType() == Material.BOW ||
-                            player.getInventory().getItemInOffHand().getType() == Material.BOW) {
-                            
-                            // プレイヤーの視界内（100ブロック以内）のエンティティを取得
-                            for (Entity entity : player.getNearbyEntities(100, 100, 100)) {
-                                if (entity instanceof ArmorStand) {
-                                    ArmorStand armorStand = (ArmorStand) entity;
-                                    
-                                    // プラグイン製のアーマースタンドかつ、自分のものでない場合
-                                    if (ArmorStandUtils.isPluginArmorStand(armorStand) && 
-                                        !ArmorStandUtils.isPlayerOwnedArmorStand(armorStand, player)) {
+                synchronized (collisionLock) {
+                    for (World world : plugin.getServer().getWorlds()) {
+                        // 全てのプレイヤーに対して処理
+                        for (Player player : world.getPlayers()) {
+                            // プレイヤーが弓を持っているか確認
+                            if (player.getInventory().getItemInMainHand().getType() == Material.BOW ||
+                                player.getInventory().getItemInOffHand().getType() == Material.BOW) {
+                                
+                                // プレイヤーの視界内（100ブロック以内）のエンティティを取得
+                                for (Entity entity : player.getNearbyEntities(100, 100, 100)) {
+                                    if (entity instanceof ArmorStand) {
+                                        ArmorStand armorStand = (ArmorStand) entity;
                                         
-                                        // プレイヤーの視界内にあるかどうかを確認
-                                        if (isInFieldOfView(player, armorStand)) {
-                                            // 当たり判定を有効化
-                                            armorStand.setCollidable(true);
-                                        } else {
-                                            // 視界外なら当たり判定を無効化
-                                            armorStand.setCollidable(false);
+                                        // プラグイン製のアーマースタンドかつ、自分のものでない場合
+                                        if (ArmorStandUtils.isPluginArmorStand(armorStand) && 
+                                            !ArmorStandUtils.isPlayerOwnedArmorStand(armorStand, player)) {
+                                            
+                                            UUID armorStandId = armorStand.getUniqueId();
+                                            boolean shouldBeCollidable = isInFieldOfView(player, armorStand);
+                                            
+                                            // 現在の状態を取得または初期化
+                                            Boolean currentState = armorStandCollisionStates.get(armorStandId);
+                                            
+                                            // 状態が変更された場合のみ更新
+                                            if (currentState == null || currentState != shouldBeCollidable) {
+                                                armorStand.setCollidable(shouldBeCollidable);
+                                                armorStandCollisionStates.put(armorStandId, shouldBeCollidable);
+                                            }
                                         }
                                     }
                                 }
@@ -179,6 +194,9 @@ public class GameEventListener implements Listener {
             One_Shot_Glory.getPlugin().getServer().getScheduler().cancelTask(collisionCheckTaskId);
             collisionCheckTaskId = -1;
         }
+
+        // 状態管理マップをクリア
+        armorStandCollisionStates.clear();
     }
 
     /**
