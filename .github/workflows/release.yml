@@ -111,8 +111,14 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          # 変更されたファイルをステージングする
+          git add src/main/resources/plugin.yml
+          git add gradlew
+          git add -A  # 他にも変更があればすべてステージング
+          # ステージングした後でpullを実行
           git pull --rebase origin main || (echo "==== リベースに失敗しました。マージを試みます ====" && git pull --no-rebase)
-          git commit -m "Bump version to v${{ steps.extract_version.outputs.version }} [skip ci]"
+          # 変更がある場合のみコミットする
+          git diff --staged --quiet || git commit -m "Bump version to v${{ steps.extract_version.outputs.version }} [skip ci]"
           git push
       
       # gradle.ymlワークフローからビルドされたアーティファクトをダウンロード
