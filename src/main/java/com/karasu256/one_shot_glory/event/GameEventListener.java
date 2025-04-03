@@ -258,9 +258,18 @@ public class GameEventListener implements Listener {
         }
 
         // アーマースタンドへのダメージ処理
-        if (event.getEntity() instanceof ArmorStand) {
-            var armorStand = (ArmorStand) event.getEntity();
-            
+        if (event.getEntity() instanceof ArmorStand armorStand) {
+            // プラグイン製のアーマースタンドかチェック
+            if (!ArmorStandUtils.isPluginArmorStand(armorStand)) {
+                return;
+            }
+
+            // 矢によるダメージ以外はキャンセル
+            if (!(event.getDamageSource().getCausingEntity() instanceof org.bukkit.entity.Arrow)) {
+                event.setCancelled(true);
+                return;
+            }
+
             // メタデータが存在し、空でないことを確認
             if (!armorStand.hasMetadata("owner") || armorStand.getMetadata("owner").isEmpty()) {
                 return;
