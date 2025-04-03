@@ -25,7 +25,7 @@ public class BuffSystem {
     /** このバフシステムが管理するバフタイプ */
     private final BuffType buffType;
     /** メタデータのキー */
-    private static final String BUFF_METADATA_KEY = "active_buffs";
+    public static final String BUFF_METADATA_KEY = "active_buffs";
     
     /**
      * 特定のバフタイプを持つBuffSystemインスタンスを作成するコンストラクタ
@@ -146,7 +146,7 @@ public class BuffSystem {
      * @return アクティブなバフのリスト
      */
     @SuppressWarnings("unchecked")
-    private static List<BuffType> getActiveBuffs(Player player) {
+    public static List<BuffType> getActiveBuffs(Player player) {
         if (player.hasMetadata(BUFF_METADATA_KEY)) {
             List<MetadataValue> values = player.getMetadata(BUFF_METADATA_KEY);
             if (!values.isEmpty()) {

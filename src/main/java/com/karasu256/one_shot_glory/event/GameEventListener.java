@@ -1,5 +1,6 @@
 package com.karasu256.one_shot_glory.event;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +24,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Objective;
@@ -402,11 +404,28 @@ public class GameEventListener implements Listener {
         if (event.getEntity() instanceof Player player && event.getOldEffect() != null) {
             PotionEffectType removedEffect = event.getOldEffect().getType();
             
-            // 各バフタイプをチェックし、取り除かれたエフェクトを含むバフを見つける
+            // 各バフタイプをチェック
             for (BuffType buffType : BuffType.values()) {
                 if (buffType.getPotionEffectTypes().contains(removedEffect)) {
-                    // バフを取り除く
-                    BuffSystem.removeBuff(player, buffType);
+                    // 直接バフを削除
+                    List<BuffType> activeBuffs = BuffSystem.getActiveBuffs(player);
+                    if (activeBuffs.remove(buffType)) {
+                        // バフリストを更新
+                        if (activeBuffs.isEmpty()) {
+                            player.removeMetadata(BuffSystem.BUFF_METADATA_KEY, One_Shot_Glory.getPlugin());
+                        } else {
+                            player.setMetadata(BuffSystem.BUFF_METADATA_KEY, 
+                                new FixedMetadataValue(One_Shot_Glory.getPlugin(), activeBuffs));
+                        }
+                        
+                        // 関連するポーション効果を削除
+                        ArmorStand armorStand = ArmorStandUtils.getPlayerArmorStand(player);
+                        if (armorStand != null) {
+                            for (PotionEffectType effectType : buffType.getPotionEffectTypes()) {
+                                armorStand.removePotionEffect(effectType);
+                            }
+                        }
+                    }
                     break;
                 }
             }
