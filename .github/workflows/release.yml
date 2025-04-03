@@ -111,8 +111,9 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add version.properties build-number.properties src/main/resources/plugin.yml
-          git commit -m "Bump version to v${{ steps.extract_version.outputs.version }} [skip ci]"
+          git pull --rebase origin main || (echo "==== リベースに失敗しました。マージを試みます ====" && git pull --no-rebase)
+          git commit -m "Bump version to v${{ steps.extract_version.outputs.version }} [skip ci]"o-rebase)
+          git pushit -m "Bump version to v${{ steps.extract_version.outputs.version }} [skip ci]"
           git push
       
       # gradle.ymlワークフローからビルドされたアーティファクトをダウンロード
