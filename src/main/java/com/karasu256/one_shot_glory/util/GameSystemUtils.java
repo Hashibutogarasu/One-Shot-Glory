@@ -60,7 +60,6 @@ public class GameSystemUtils {
 
         PlayerInteractEvent.getHandlerList().unregister(plugin);
 
-        sender.sendMessage(langManager.getMessage("commands.stop.success", null));
         return Initializer.stop();
     }
 }
