@@ -35,12 +35,9 @@ public class GameSystemUtils {
      */
     public static boolean startGame(CommandSender sender) {
         One_Shot_Glory plugin = One_Shot_Glory.getPlugin(One_Shot_Glory.class);
-        var langManager = plugin.getLanguageManager();
-
         One_Shot_Glory.config.set("enabled", true);
         plugin.saveConfig();
 
-        sender.sendMessage(langManager.getMessage("commands.start.success", null));
         return Initializer.init(sender);
     }
 

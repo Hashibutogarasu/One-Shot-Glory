@@ -56,8 +56,6 @@ public class Initializer {
      */
     @SuppressWarnings("deprecation")
     public static boolean init(CommandSender sender) {
-        sender.sendMessage("§aInitializing One Shot Glory...");
-
         // unregister the previous event listener
         var pluginManager = sender.getServer().getPluginManager();
         var plugin = One_Shot_Glory.getPlugin();
@@ -101,8 +99,6 @@ public class Initializer {
             gameEventListener = new GameEventListener(objective);
             pluginManager.registerEvents(gameEventListener, plugin);
         }
-
-        sender.sendMessage("§aOne Shot Glory has been initialized!");
 
         return true;
     }
