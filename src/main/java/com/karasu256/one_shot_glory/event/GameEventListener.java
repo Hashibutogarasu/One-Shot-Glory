@@ -1,8 +1,12 @@
 package com.karasu256.one_shot_glory.event;
 
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,9 +18,11 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Objective;
+import org.bukkit.util.Vector;
 
 import com.karasu256.one_shot_glory.One_Shot_Glory;
 import com.karasu256.one_shot_glory.util.ArmorStandUtils;
@@ -41,21 +47,122 @@ public class GameEventListener implements Listener {
     private final Objective objective;
 
     /**
+     * アーマースタンドの当たり判定を更新するタスクのスケジューラーID
+     */
+    private int collisionCheckTaskId = -1;
+
+    /**
      * GameEventListenerのコンストラクタ
      * <p>
-     * スコア管理のための目標オブジェクトを設定します。
+     * スコア管理のための目標オブジェクトを設定し、
+     * アーマースタンドの当たり判定更新タスクを開始します。
      * </p>
      * 
      * @param objective スコアを記録するための目標オブジェクト
      */
     public GameEventListener(Objective objective) {
         this.objective = objective;
+        startCollisionCheckTask();
+    }
+
+    /**
+     * プレイヤーの視界内にエンティティがあるかどうかを判定するメソッド
+     * <p>
+     * プレイヤーの視線方向と視野角を考慮して、エンティティが視界内にあるかどうかを判定します。
+     * 視野角は水平方向70度、垂直方向40度とし、距離は100ブロック以内とします。
+     * </p>
+     * 
+     * @param player 判定の基準となるプレイヤー
+     * @param target 視界内にあるか判定するエンティティ
+     * @return 視界内にある場合はtrue、そうでない場合はfalse
+     */
+    private boolean isInFieldOfView(Player player, Entity target) {
+        // プレイヤーとターゲットの位置ベクトルを取得
+        Location playerLoc = player.getEyeLocation();
+        Location targetLoc = target.getLocation();
+        
+        // 距離チェック（100ブロック以上離れている場合は視界外）
+        if (playerLoc.distance(targetLoc) > 100) {
+            return false;
+        }
+
+        // プレイヤーの視線方向ベクトルを取得
+        Vector playerDirection = playerLoc.getDirection();
+        
+        // プレイヤーからターゲットへのベクトルを計算
+        Vector toTarget = targetLoc.toVector().subtract(playerLoc.toVector());
+        
+        // 2つのベクトルのなす角を計算（ラジアン）
+        double angle = playerDirection.angle(toTarget);
+        
+        // 水平方向の角度（70度）をラジアンに変換
+        double horizontalFOV = Math.toRadians(70);
+        
+        // 垂直方向の角度（40度）をラジアンに変換
+        double verticalFOV = Math.toRadians(40);
+        
+        // 水平方向の角度チェック
+        if (angle > horizontalFOV / 2) {
+            return false;
+        }
+        
+        // 垂直方向の角度チェック
+        double verticalAngle = Math.abs(Math.asin(toTarget.normalize().getY()) - 
+                                      Math.asin(playerDirection.normalize().getY()));
+        if (verticalAngle > verticalFOV / 2) {
+            return false;
+        }
+
+        // 視線が通るかどうかをチェック
+        return player.hasLineOfSight(target);
+    }
+
+    /**
+     * アーマースタンドの当たり判定更新タスクを開始するメソッド
+     */
+    private void startCollisionCheckTask() {
+        var plugin = One_Shot_Glory.getPlugin();
+        if (plugin != null) {
+            collisionCheckTaskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+                for (World world : plugin.getServer().getWorlds()) {
+                    // 全てのプレイヤーに対して処理
+                    for (Player player : world.getPlayers()) {
+                        // プレイヤーが弓を持っているか確認
+                        if (player.getInventory().getItemInMainHand().getType() == Material.BOW ||
+                            player.getInventory().getItemInOffHand().getType() == Material.BOW) {
+                            
+                            // プレイヤーの視界内（100ブロック以内）のエンティティを取得
+                            for (Entity entity : player.getNearbyEntities(100, 100, 100)) {
+                                if (entity instanceof ArmorStand) {
+                                    ArmorStand armorStand = (ArmorStand) entity;
+                                    
+                                    // プラグイン製のアーマースタンドかつ、自分のものでない場合
+                                    if (ArmorStandUtils.isPluginArmorStand(armorStand) && 
+                                        !ArmorStandUtils.isPlayerOwnedArmorStand(armorStand, player)) {
+                                        
+                                        // プレイヤーの視界内にあるかどうかを確認
+                                        if (isInFieldOfView(player, armorStand)) {
+                                            // 当たり判定を有効化
+                                            armorStand.setCollidable(true);
+                                        } else {
+                                            // 視界外なら当たり判定を無効化
+                                            armorStand.setCollidable(false);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }, 0L, 1L); // 1tickごとに実行
+        }
     }
 
     /**
      * このリスナーの登録を解除するメソッド
      * <p>
-     * 関連するすべてのイベントハンドラの登録を解除します。
+     * 関連するすべてのイベントハンドラの登録を解除し、
+     * 実行中のタスクを停止します。
      * このメソッドは、ゲームが停止したときや、プラグインが無効化されるときに呼び出されます。
      * </p>
      */
@@ -66,6 +173,12 @@ public class GameEventListener implements Listener {
         PlayerDeathEvent.getHandlerList().unregister(this);
         PlayerRespawnEvent.getHandlerList().unregister(this);
         PlayerQuitEvent.getHandlerList().unregister(this);
+
+        // タスクを停止
+        if (collisionCheckTaskId != -1) {
+            One_Shot_Glory.getPlugin().getServer().getScheduler().cancelTask(collisionCheckTaskId);
+            collisionCheckTaskId = -1;
+        }
     }
 
     /**
@@ -268,7 +381,7 @@ public class GameEventListener implements Listener {
      */
     @EventHandler
     private void onPotionEffectRemove(EntityPotionEffectEvent event) {
-        if (event.getEntity() instanceof Player player) {
+        if (event.getEntity() instanceof Player player && event.getOldEffect() != null) {
             PotionEffectType removedEffect = event.getOldEffect().getType();
             
             // 各バフタイプをチェックし、取り除かれたエフェクトを含むバフを見つける
@@ -277,6 +390,50 @@ public class GameEventListener implements Listener {
                     // バフを取り除く
                     BuffSystem.removeBuff(player, buffType);
                     break;
+                }
+            }
+        }
+    }
+
+    /**
+     * ワールドのティックイベントを処理するハンドラ
+     * <p>
+     * プレイヤーの視界内のアーマースタンドの当たり判定を制御します。
+     * プレイヤーが弓を持っている場合、自分以外のプレイヤーのアーマースタンドの
+     * 当たり判定を有効にします。
+     * </p>
+     * 
+     * @param event ワールドティックイベント
+     */
+    @EventHandler
+    private void onWorldTick(WorldLoadEvent event) {
+        World world = event.getWorld();
+        
+        // 全てのプレイヤーに対して処理
+        for (Player player : world.getPlayers()) {
+            // プレイヤーが弓を持っているか確認
+            if (player.getInventory().getItemInMainHand().getType() == Material.BOW ||
+                player.getInventory().getItemInOffHand().getType() == Material.BOW) {
+                
+                // プレイヤーの視界内（100ブロック以内）のエンティティを取得
+                for (Entity entity : player.getNearbyEntities(100, 100, 100)) {
+                    if (entity instanceof ArmorStand) {
+                        ArmorStand armorStand = (ArmorStand) entity;
+                        
+                        // プラグイン製のアーマースタンドかつ、自分のものでない場合
+                        if (ArmorStandUtils.isPluginArmorStand(armorStand) && 
+                            !ArmorStandUtils.isPlayerOwnedArmorStand(armorStand, player)) {
+                            
+                            // プレイヤーの視界内にあるかどうかを確認
+                            if (isInFieldOfView(player, armorStand)) {
+                                // 当たり判定を有効化
+                                armorStand.setCollidable(true);
+                            } else {
+                                // 視界外なら当たり判定を無効化
+                                armorStand.setCollidable(false);
+                            }
+                        }
+                    }
                 }
             }
         }
