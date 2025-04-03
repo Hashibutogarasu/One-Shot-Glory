@@ -101,8 +101,29 @@ public class GameEventListener implements Listener {
      */
     @EventHandler()
     private void onEntityDamage(EntityDamageEvent event) {
-        // cancel the damage to the player
-        // if the damaged entity is a armor stand, the owner will kill
+        if (event.getEntity() instanceof Player) {
+            // 矢によるダメージの場合
+            if (event.getDamageSource().getCausingEntity() != null && 
+                event.getDamageSource().getCausingEntity().getType() == EntityType.ARROW) {
+                
+                Player player = (Player) event.getEntity();
+                // プレイヤーのHPを0にする
+                player.damage(1000, DamageSource.builder(DamageType.ARROW).build());
+                event.setCancelled(true);
+                return;
+            }
+            
+            // プレイヤーからの直接攻撃の場合
+            if (event.getDamageSource().getCausingEntity() instanceof Player) {
+                event.setCancelled(true);
+                return;
+            }
+            
+            // その他の通常のダメージ（落下など）はそのまま処理
+            return;
+        }
+
+        // アーマースタンドへのダメージ処理
         if (event.getEntity() instanceof ArmorStand) {
             var armorStand = (ArmorStand) event.getEntity();
             

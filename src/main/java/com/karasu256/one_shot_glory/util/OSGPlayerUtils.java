@@ -43,6 +43,7 @@ public class OSGPlayerUtils {
         Objective objective = getEnabledPlayersObjective();
         if (objective != null) {
             objective.getScore(player.getName()).setScore(0);
+            ArmorStandUtils.removePlayerArmorStand(player);
         }
     }
 
