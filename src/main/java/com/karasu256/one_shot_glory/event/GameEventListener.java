@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.GameMode;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.ArmorStand;
@@ -23,6 +24,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
@@ -190,6 +192,7 @@ public class GameEventListener implements Listener {
         PlayerDeathEvent.getHandlerList().unregister(this);
         PlayerRespawnEvent.getHandlerList().unregister(this);
         PlayerQuitEvent.getHandlerList().unregister(this);
+        PlayerGameModeChangeEvent.getHandlerList().unregister(this); // 追加
 
         // タスクを停止
         if (collisionCheckTaskId != -1) {
@@ -484,6 +487,26 @@ public class GameEventListener implements Listener {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * プレイヤーのゲームモードが変更されたときのイベントハンドラ
+     * <p>
+     * プレイヤーがスペクテイターモードに変更されたとき、
+     * そのプレイヤーに関連付けられたArmorStandを削除します。
+     * </p>
+     *
+     * @param event プレイヤーのゲームモード変更イベント
+     */
+    @EventHandler
+    private void onGameModeChange(PlayerGameModeChangeEvent event) {
+        // スペクテイターモードに変更される場合
+        if (event.getNewGameMode() == GameMode.SPECTATOR) {
+            Player player = event.getPlayer();
+            
+            // プレイヤーのアーマースタンドを削除
+            ArmorStandUtils.removePlayerArmorStand(player);
         }
     }
 }
