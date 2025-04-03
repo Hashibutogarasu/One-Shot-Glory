@@ -3,15 +3,16 @@ package com.karasu256.one_shot_glory.event;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -64,6 +65,7 @@ public class GameEventListener implements Listener {
         EntityDamageEvent.getHandlerList().unregister(this);
         PlayerDeathEvent.getHandlerList().unregister(this);
         PlayerRespawnEvent.getHandlerList().unregister(this);
+        PlayerQuitEvent.getHandlerList().unregister(this);
     }
 
     /**
@@ -214,6 +216,48 @@ public class GameEventListener implements Listener {
             int delay = plugin.getConfig().getInt("respawn_set_health_delay");
 
             player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, (delay * 3) + 100, 255));
+        }
+    }
+
+    /**
+     * プレイヤーがサーバーから退出したときのイベントハンドラ
+     * <p>
+     * プレイヤーがサーバーから退出したとき、そのプレイヤーに関連付けられたArmorStandを削除します。
+     * これにより、サーバー上に残骸となるアーマースタンドが残らないようにします。
+     * </p>
+     * 
+     * @param event プレイヤー退出イベント
+     */
+    @EventHandler()
+    private void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        
+        // ArmorStandUtilsを使用してプレイヤーのアーマースタンドを削除
+        ArmorStandUtils.removePlayerArmorStand(player);
+    }
+
+    /**
+     * エンティティからポーション効果が取り除かれたときのイベントハンドラ
+     * <p>
+     * プレイヤーからバフシステムのポーション効果が取り除かれた場合、
+     * 対応するバフも削除します。
+     * </p>
+     * 
+     * @param event ポーション効果除去イベント
+     */
+    @EventHandler
+    private void onPotionEffectRemove(EntityPotionEffectEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            PotionEffectType removedEffect = event.getOldEffect().getType();
+            
+            // 各バフタイプをチェックし、取り除かれたエフェクトを含むバフを見つける
+            for (BuffType buffType : BuffType.values()) {
+                if (buffType.getPotionEffectTypes().contains(removedEffect)) {
+                    // バフを取り除く
+                    BuffSystem.removeBuff(player, buffType);
+                    break;
+                }
+            }
         }
     }
 }

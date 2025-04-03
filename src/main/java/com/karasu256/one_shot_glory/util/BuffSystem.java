@@ -1,7 +1,13 @@
 package com.karasu256.one_shot_glory.util;
 
-import org.bukkit.entity.ArmorStand;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.entity.Player;
+import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.metadata.MetadataValue;
+
+import com.karasu256.one_shot_glory.One_Shot_Glory;
 
 /**
  * プレイヤーへのバフ効果の適用と管理を行うクラス
@@ -18,7 +24,9 @@ import org.bukkit.entity.Player;
 public class BuffSystem {
     /** このバフシステムが管理するバフタイプ */
     private final BuffType buffType;
-
+    /** メタデータのキー */
+    private static final String BUFF_METADATA_KEY = "active_buffs";
+    
     /**
      * 特定のバフタイプを持つBuffSystemインスタンスを作成するコンストラクタ
      * 
@@ -41,7 +49,7 @@ public class BuffSystem {
      * プレイヤーにバフ効果を適用するメソッド
      * <p>
      * このバフシステムに関連付けられたバフタイプのポーション効果を
-     * プレイヤーとその関連ArmorStandに適用します。
+     * プレイヤーとその関連ArmorStandに適用し、メタデータに保存します。
      * </p>
      * 
      * @param player バフを適用するプレイヤー
@@ -51,8 +59,14 @@ public class BuffSystem {
             return;
         }
 
+        // 現在のバフリストを取得
+        List<BuffType> activeBuffs = getActiveBuffs(player);
+        if (!activeBuffs.contains(buffType)) {
+            activeBuffs.add(buffType);
+            player.setMetadata(BUFF_METADATA_KEY, new FixedMetadataValue(One_Shot_Glory.getPlugin(), activeBuffs));
+        }
+
         var potionEffectTypes = buffType.getPotionEffectTypes();
-        // ArmorStandUtilsクラスを使用してアーマースタンドを取得
         var armorStand = ArmorStandUtils.getPlayerArmorStand(player);
         if (armorStand == null) {
             return;
@@ -65,10 +79,32 @@ public class BuffSystem {
     }
 
     /**
+     * プレイヤーから指定したバフを取り除きます
+     * 
+     * @param player バフを取り除くプレイヤー
+     * @param buffType 取り除くバフの種類
+     */
+    public static void removeBuff(Player player, BuffType buffType) {
+        new BuffSystem(buffType).removeBuff(player);
+    }
+
+    /**
+     * プレイヤーからすべてのバフを取り除きます
+     * 
+     * @param player バフを取り除くプレイヤー
+     */
+    public static void removeAllBuffs(Player player) {
+        List<BuffType> activeBuffs = getAllBuffs(player);
+        for (BuffType buff : activeBuffs) {
+            removeBuff(player, buff);
+        }
+    }
+
+    /**
      * プレイヤーからバフ効果を削除するメソッド
      * <p>
      * このバフシステムに関連付けられたバフタイプのポーション効果を
-     * プレイヤーとその関連ArmorStandから削除します。
+     * プレイヤーとその関連ArmorStandから削除し、メタデータも更新します。
      * </p>
      * 
      * @param player バフを削除するプレイヤー
@@ -78,8 +114,20 @@ public class BuffSystem {
             return;
         }
 
+        // バフリストから削除
+        List<BuffType> activeBuffs = getActiveBuffs(player);
+        if (activeBuffs.remove(buffType)) {
+            // バフが実際に削除された場合のみメタデータを更新
+            if (activeBuffs.isEmpty()) {
+                // リストが空になった場合はメタデータを完全に削除
+                player.removeMetadata(BUFF_METADATA_KEY, One_Shot_Glory.getPlugin());
+            } else {
+                // まだバフが残っている場合は更新したリストを保存
+                player.setMetadata(BUFF_METADATA_KEY, new FixedMetadataValue(One_Shot_Glory.getPlugin(), activeBuffs));
+            }
+        }
+
         var potionEffectTypes = buffType.getPotionEffectTypes();
-        // ArmorStandUtilsクラスを使用してアーマースタンドを取得
         var armorStand = ArmorStandUtils.getPlayerArmorStand(player);
         if (armorStand == null) {
             return;
@@ -89,6 +137,23 @@ public class BuffSystem {
             player.removePotionEffect(potionEffectType);
             armorStand.removePotionEffect(potionEffectType);
         }
+    }
+
+    /**
+     * プレイヤーの現在アクティブなバフリストを取得します
+     * 
+     * @param player 対象のプレイヤー
+     * @return アクティブなバフのリスト
+     */
+    @SuppressWarnings("unchecked")
+    private static List<BuffType> getActiveBuffs(Player player) {
+        if (player.hasMetadata(BUFF_METADATA_KEY)) {
+            List<MetadataValue> values = player.getMetadata(BUFF_METADATA_KEY);
+            if (!values.isEmpty()) {
+                return (List<BuffType>) values.get(0).value();
+            }
+        }
+        return new ArrayList<>();
     }
 
     /**
@@ -106,5 +171,26 @@ public class BuffSystem {
         var randomIndex = (int) (Math.random() * buffTypes.length);
         var buffType = buffTypes[randomIndex];
         return new BuffSystem(buffType);
+    }
+
+    /**
+     * プレイヤーが指定されたバフを持っているかを確認します
+     * 
+     * @param player 確認するプレイヤー
+     * @param buffType 確認するバフの種類
+     * @return プレイヤーが指定されたバフを持っている場合はtrue
+     */
+    public static boolean hasBuff(Player player, BuffType buffType) {
+        return getActiveBuffs(player).contains(buffType);
+    }
+
+    /**
+     * プレイヤーが現在持っているすべてのバフを取得します
+     * 
+     * @param player 確認するプレイヤー
+     * @return プレイヤーが持っているバフのリスト
+     */
+    public static List<BuffType> getAllBuffs(Player player) {
+        return new ArrayList<>(getActiveBuffs(player));
     }
 }

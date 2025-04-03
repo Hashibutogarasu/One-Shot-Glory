@@ -95,7 +95,7 @@ public class ArmorStandUtils {
      * <p>
      * 指定されたプレイヤーの位置に不可視のアーマースタンドを生成し、
      * 基本的な設定を適用して頭にアイテムを装備させます。
-     * プレイヤーに既にアーマースタンドが乗っている場合は、それを削除します。
+     * プレイヤーに既にアーマースタンドが関連付けられている場合は、それを削除します。
      * </p>
      * 
      * @param world     アーマースタンドを生成するワールド
@@ -128,6 +128,19 @@ public class ArmorStandUtils {
                 }
             }
         }
+        
+        // ワールド内のすべてのアーマースタンドをチェックして、このプレイヤーに関連付けられたものを削除
+        world.getEntitiesByClass(ArmorStand.class).stream()
+                .filter(armorStand -> armorStand.hasMetadata("owner") && 
+                        !armorStand.getMetadata("owner").isEmpty() && 
+                        armorStand.getMetadata("owner").get(0).asString().equals(player.getUniqueId().toString()) &&
+                        armorStand.hasMetadata("id") &&
+                        !armorStand.getMetadata("id").isEmpty() &&
+                        armorStand.getMetadata("id").get(0).asString().equals("armor_stand"))
+                .forEach(armorStand -> {
+                    armorStand.remove();
+                    managedArmorStands.remove(armorStand);
+                });
         
         // 新しいアーマースタンドを生成
         ArmorStand armorStand = (ArmorStand) world.spawnEntity(
