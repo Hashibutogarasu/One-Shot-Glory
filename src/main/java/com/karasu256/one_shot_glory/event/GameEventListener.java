@@ -234,25 +234,26 @@ public class GameEventListener implements Listener {
      */
     @EventHandler()
     private void onEntityDamage(EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player) {
+        if (event.getEntity() instanceof Player player) {
+            // プレイヤーが有効でない場合は通常のダメージ処理を行う
+            if (!OSGPlayerUtils.isPlayerEnabled(player)) {
+                return;
+            }
+
             // 矢によるダメージの場合
             if (event.getDamageSource().getCausingEntity() != null && 
                 event.getDamageSource().getCausingEntity().getType() == EntityType.ARROW) {
                 
-                Player player = (Player) event.getEntity();
-                // プレイヤーのHPを0にする
-                player.damage(1000, DamageSource.builder(DamageType.ARROW).build());
-                event.setCancelled(true);
+                // 攻撃者が有効なプレイヤーの場合のみ処理
+                if (event.getDamageSource().getCausingEntity() instanceof Player attacker && 
+                    OSGPlayerUtils.isPlayerEnabled(attacker)) {
+                    player.damage(1000, DamageSource.builder(DamageType.ARROW).build());
+                    event.setCancelled(true);
+                }
                 return;
             }
             
-            // プレイヤーからの直接攻撃の場合
-            if (event.getDamageSource().getCausingEntity() instanceof Player) {
-                event.setCancelled(true);
-                return;
-            }
-            
-            // その他の通常のダメージ（落下など）はそのまま処理
+            // その他の通常のダメージ（プレイヤーの攻撃、落下など）はそのまま処理
             return;
         }
 
@@ -270,32 +271,33 @@ public class GameEventListener implements Listener {
                             .equals(armorStand.getMetadata("owner").get(0).asString()))
                     .findFirst().orElse(null);
 
-            //if the owner and the killer are the same, do nothing
+            // プレイヤーが無効な場合は処理しない
+            if (player == null || !OSGPlayerUtils.isPlayerEnabled(player)) {
+                return;
+            }
+
+            // 所有者と攻撃者が同じ場合は何もしない
             if (player == event.getDamageSource().getCausingEntity()) {
                 return;
             }
 
-            if (player != null) {
-                player.damage(1000, DamageSource.builder(DamageType.OUT_OF_WORLD).build());
-            }
-
+            player.damage(1000, DamageSource.builder(DamageType.OUT_OF_WORLD).build());
             armorStand.remove();
 
-            // get damage source player
+            // ダメージを与えたプレイヤーの処理
             var entity = event.getDamageSource().getCausingEntity();
 
-            if (entity instanceof Player) {
+            if (entity instanceof Player killer && OSGPlayerUtils.isPlayerEnabled(killer)) {
                 objective.getScore(entity.getName()).setScore(objective.getScore(entity.getName()).getScore() + 1);
             }
 
-            // get armor stand head item
+            // アーマースタンドの頭装備からバフを適用
             if (armorStand != null) {
                 var itemStack = armorStand.getEquipment().getHelmet();
-
                 BuffType buffType = BuffType.getBuffTypeByItemStack(itemStack);
 
-                // apply the buff to the killer
-                if (entity instanceof Player killer) {
+                // 攻撃者にバフを適用
+                if (entity instanceof Player killer && OSGPlayerUtils.isPlayerEnabled(killer)) {
                     BuffSystem buffSystem = new BuffSystem(buffType);
                     buffSystem.applyBuff(killer);
                 }
