@@ -1,6 +1,6 @@
 name: one_shot_glory
 description: 'One Shot Glory is a plugin that allows you to kill a player with one shot.'
-version: '0.1.2'
+version: '0.1.3'
 main: com.karasu256.one_shot_glory.One_Shot_Glory
 api-version: '1.21'
 authors: [ Hashibutogarasu ]
