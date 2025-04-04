@@ -9,13 +9,21 @@ group = 'com.karasu256'
 def versionFile = file('version.properties')
 def versionProps = new Properties()
 
+def initializeWithGitVersion() {
+    def gitVersion = fetchLatestGitVersion()
+    versionProps.setProperty('major', gitVersion[0].toString())
+    versionProps.setProperty('minor', gitVersion[1].toString())
+    versionProps.setProperty('patch', gitVersion[2].toString())
+    println "Initialized version from Git: ${gitVersion[0]}.${gitVersion[1]}.${gitVersion[2]}"
+    return gitVersion
+}
+
 if (versionFile.exists()) {
     versionFile.withInputStream { versionProps.load(it) }
 } else {
-    versionProps.setProperty('major', '0')
-    versionProps.setProperty('minor', '1')
-    versionProps.setProperty('patch', '0')
+    def gitVersion = initializeWithGitVersion()
     versionFile.createNewFile()
+    versionFile.withOutputStream { versionProps.store(it, "Version properties for ${project.name}") }
 }
 
 def buildNumberFile = file('build-number.properties')
@@ -35,7 +43,55 @@ def buildNumber = buildProps.getProperty('buildNumber').toInteger()
 
 version = "${majorVersion}.${minorVersion}.${patchVersion}-build.${buildNumber}"
 
+def fetchLatestGitVersion() {
+    def latestVersion = [0, 1, 0]
+    try {
+        def process = "git ls-remote --tags https://github.com/Hashibutogarasu/One-Shot-Glory.git".execute()
+        def tags = process.text.readLines()
+            .collect { it.split()[1].replaceAll("refs/tags/v", "") }
+            .findAll { it =~ /^\d+\.\d+\.\d+$/ }
+        
+        if (tags) {
+            def latest = tags.last()
+            latestVersion = latest.tokenize('.').collect { it.toInteger() }
+            println "Found latest version tag: v${latest}"
+        }
+    } catch (Exception e) {
+        println "Warning: Failed to fetch version from Git: ${e.message}"
+    }
+    return latestVersion
+}
+
+task checkGitVersion {
+    doLast {
+        def gitVersion = fetchLatestGitVersion()
+        def currentMajor = versionProps.getProperty('major').toInteger()
+        def currentMinor = versionProps.getProperty('minor').toInteger()
+        def currentPatch = versionProps.getProperty('patch').toInteger()
+        
+        if (gitVersion[0] != currentMajor || gitVersion[1] != currentMinor || gitVersion[2] != currentPatch) {
+            versionProps.setProperty('major', gitVersion[0].toString())
+            versionProps.setProperty('minor', gitVersion[1].toString())
+            versionProps.setProperty('patch', gitVersion[2].toString())
+            buildProps.setProperty('buildNumber', '0')
+            
+            versionFile.withOutputStream { versionProps.store(it, "Version properties for ${project.name}") }
+            buildNumberFile.withOutputStream { buildProps.store(it, "Build Number for ${project.name}") }
+            
+            // バージョン変数を即座に更新
+            majorVersion = gitVersion[0]
+            minorVersion = gitVersion[1]
+            patchVersion = gitVersion[2]
+            buildNumber = 0
+            version = "${majorVersion}.${minorVersion}.${patchVersion}-build.${buildNumber}"
+            
+            println "Updated version to ${gitVersion[0]}.${gitVersion[1]}.${gitVersion[2]}"
+        }
+    }
+}
+
 task updateVersion {
+    dependsOn checkGitVersion
     doLast {
         def type = project.hasProperty('versionType') ? project.getProperty('versionType') : 'none'
         
@@ -89,7 +145,7 @@ task incrementBuildNumber {
 }
 
 task release {
-    dependsOn updateVersion, build
+    dependsOn checkGitVersion, updateVersion, build
     description = 'Updates version according to specified type (major, minor, patch) and builds the project'
     
     doLast {
@@ -98,6 +154,7 @@ task release {
 }
 
 tasks.named('build').configure {
+    dependsOn checkGitVersion
     if (!gradle.startParameter.taskNames.contains('release') 
         && !gradle.startParameter.taskNames.any { it.contains('publish') || it == 'publishToMavenCentral' }) {
         dependsOn incrementBuildNumber
