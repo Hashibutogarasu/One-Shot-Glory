@@ -375,12 +375,23 @@ public class GameEventListener implements Listener {
      */
     @EventHandler
     private void onGameModeChange(PlayerGameModeChangeEvent event) {
+        Player player = event.getPlayer();
+        ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
+        
+        if (itemFrame == null) {
+            return;
+        }
+
         // スペクテイターモードに変更される場合
         if (event.getNewGameMode() == GameMode.SPECTATOR) {
-            Player player = event.getPlayer();
-            
-            // プレイヤーのアイテムフレームを削除
-            ItemFrameUtils.removePlayerItemFrame(player);
+            // アイテムフレームのアイテムを空気に設定
+            itemFrame.setItem(new ItemStack(Material.AIR));
+        }
+        // クリエイティブまたはスペクテイター以外のモードに変更される場合
+        else if (event.getNewGameMode() != GameMode.CREATIVE) {
+            // ランダムなバフを取得してアイテムフレームに設定
+            BuffType buffType = BuffSystem.getRandomBuff(player).getBuffType();
+            itemFrame.setItem(buffType.getItemStack());
         }
     }
 
