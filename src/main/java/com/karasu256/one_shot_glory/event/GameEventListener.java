@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
@@ -211,7 +212,8 @@ public class GameEventListener implements Listener {
             var displayedItem = itemFrame.getItem();
 
             // プレイヤーのアイテムフレームを削除
-            ItemFrameUtils.removePlayerItemFrame(player);
+            Entity entity = ItemFrameUtils.getPlayerItemFrame(player);
+            entity.remove();
             arrow.remove();
 
             // ダメージ処理
@@ -292,17 +294,18 @@ public class GameEventListener implements Listener {
     private void onPlayerRespawn(PlayerRespawnEvent event) {
         var plugin = One_Shot_Glory.getPlugin();
 
-        // spawn new item display
+        // プラグインが有効で、プレイヤーが対象の場合のみアイテムフレームを生成
         if (plugin != null) {
             var player = event.getPlayer();
-            GameManager.spawnTarget(player.getWorld(), player);
+            if (OSGPlayerUtils.isPlayerEnabled(player)) {
+                GameManager.spawnTarget(player.getWorld(), player);
+            }
         }
 
         // give a effect of resistance to the player
         var player = event.getPlayer();
         if (plugin != null) {
             int delay = plugin.getConfig().getInt("respawn_set_health_delay");
-
             player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, (delay * 3) + 100, 255));
         }
     }
