@@ -64,18 +64,20 @@ jobs:
           if [ -z "$COMMIT_MESSAGES" ]; then
             COMMIT_MESSAGES="- 変更なし（初回リリースまたは変更がありません）"
           fi
-          
-          # マルチライン変数として設定
+
+          # 環境変数の設定方法を修正
           {
-            DESCRIPTION="最新リリースからの変更点:\n$COMMIT_MESSAGES"
-            echo "PACKAGE_DESCRIPTION=$DESCRIPTION" >> $GITHUB_ENV
+            DESCRIPTION="最新リリースからの変更点:"$'\n'"$COMMIT_MESSAGES"
+            echo "PACKAGE_DESCRIPTION<<EOF" >> $GITHUB_ENV
+            echo "$DESCRIPTION" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
             
             # デバッグ用にコンソールにも出力
             echo "生成された説明文:"
             echo "$DESCRIPTION"
             
             # build.gradleに渡すためのプロパティファイルを作成
-            echo "packageDescription=$(echo "$DESCRIPTION" | base64 | tr -d '\n')" > package_description.properties
+            echo "packageDescription=$(echo "$DESCRIPTION" | base64 -w 0)" > package_description.properties
           }
 
       - name: Build and Publish with Gradle
