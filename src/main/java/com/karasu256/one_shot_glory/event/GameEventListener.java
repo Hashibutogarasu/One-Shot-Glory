@@ -141,81 +141,99 @@ public class GameEventListener implements Listener {
         }
     }
 
+
     /**
-     * アイテムフレームが操作されたときのイベントハンドラ
+     * 矢が何かに当たったときのイベントハンドラ
      * <p>
-     * プレイヤーがアイテムフレームを操作した際の処理を行います。
-     * アイテムフレームの破壊時は所有者にダメージを与え、攻撃者にバフを付与します。
+     * 矢がヒットしたときの処理を行います。
+     * - アイテムフレームに当たった場合、アイテムフレームの所有者にダメージを与え、攻撃者にバフを付与します。
+     * - それ以外の場合は矢のエンティティを削除します。
      * </p>
-     *
-     * @param event アイテムフレーム操作イベント
+     * 
+     * @param event 矢のヒットイベント
      */
     @EventHandler(priority = EventPriority.HIGH)
-    private void onPlayerItemFrameChange(PlayerItemFrameChangeEvent event) {
-        ItemFrame itemFrame = event.getItemFrame();
-        Player attacker = event.getPlayer();
-
-        // プラグイン製のアイテムフレームかチェック
-        if (!ItemFrameUtils.isPluginItemFrame(itemFrame)) {
+    private void onArrowHit(ProjectileHitEvent event) {
+        if (event.getEntityType() != EntityType.ARROW) {
             return;
         }
 
-        // メタデータが存在し、空でないことを確認
-        if (!itemFrame.hasMetadata("owner") || itemFrame.getMetadata("owner").isEmpty()) {
+        var arrow = event.getEntity();
+        if (!(arrow.getShooter() instanceof Player attacker)) {
             return;
         }
 
-        // アイテムフレームの所有者プレイヤーを取得
-        var player = itemFrame.getWorld().getEntitiesByClass(Player.class).stream()
-                .filter(entity -> entity.getUniqueId().toString()
-                        .equals(itemFrame.getMetadata("owner").get(0).asString()))
-                .findFirst().orElse(null);
+        // ヒットしたエンティティがアイテムフレームの場合の処理
+        if (event.getHitEntity() instanceof ItemFrame itemFrame) {
+            // プラグイン製のアイテムフレームかチェック
+            if (!ItemFrameUtils.isPluginItemFrame(itemFrame)) {
+                return;
+            }
 
-        // プレイヤーが無効な場合は処理しない
-        if (player == null || !OSGPlayerUtils.isPlayerEnabled(player)) {
-            return;
-        }
+            // メタデータが存在し、空でないことを確認
+            if (!itemFrame.hasMetadata("owner") || itemFrame.getMetadata("owner").isEmpty()) {
+                return;
+            }
 
-        // 所有者と攻撃者が同じ場合は何もしない
-        if (player.equals(attacker)) {
-            event.setCancelled(true);
-            return;
-        }
+            // アイテムフレームの所有者プレイヤーを取得
+            var player = itemFrame.getWorld().getEntitiesByClass(Player.class).stream()
+                    .filter(entity -> entity.getUniqueId().toString()
+                            .equals(itemFrame.getMetadata("owner").get(0).asString()))
+                    .findFirst().orElse(null);
 
-        // チームの確認
-        boolean isDifferentTeam = true;  // デフォルトでは別チームとみなす
-        Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
-        Team attackerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(attacker.getName());
-        
-        // 両方が同じチームに所属していて、そのチームがフレンドリーファイアを許可していない場合
-        if (playerTeam != null && attackerTeam != null && playerTeam.equals(attackerTeam) && 
-            !playerTeam.allowFriendlyFire()) {
-            isDifferentTeam = false;
-        }
-        
-        // 同じチームの場合はアクションをキャンセル
-        if (!isDifferentTeam) {
-            event.setCancelled(true);
-            return;
-        }
+            // プレイヤーが無効な場合は処理しない
+            if (player == null || !OSGPlayerUtils.isPlayerEnabled(player)) {
+                return;
+            }
 
-        // ダメージ処理
-        player.damage(1000, DamageSource.builder(DamageType.OUT_OF_WORLD).build());
-        itemFrame.remove();
+            // 所有者と攻撃者が同じ場合は何もしない
+            if (player.equals(attacker)) {
+                return;
+            }
 
-        // スコア加算
-        if (OSGPlayerUtils.isPlayerEnabled(attacker)) {
-            objective.getScore(attacker.getName()).setScore(objective.getScore(attacker.getName()).getScore() + 1);
-        }
+            // チームの確認
+            boolean isDifferentTeam = true;  // デフォルトでは別チームとみなす
+            Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
+            Team attackerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(attacker.getName());
+            
+            // 両方が同じチームに所属していて、そのチームがフレンドリーファイアを許可していない場合
+            if (playerTeam != null && attackerTeam != null && playerTeam.equals(attackerTeam) && 
+                !playerTeam.allowFriendlyFire()) {
+                isDifferentTeam = false;
+            }
+            
+            // 同じチームの場合は処理をキャンセル
+            if (!isDifferentTeam) {
+                return;
+            }
 
-        // アイテムフレームのアイテムからバフを適用 (別チームのプレイヤーの場合のみ)
-        if (isDifferentTeam) {
+            // アイテムフレームのアイテムを保存しておく（バフ付与用）
             var displayedItem = itemFrame.getItem();
-            BuffType buffType = BuffType.getBuffTypeByItemStack(displayedItem);
 
-            // 攻撃者にバフを適用
-            BuffSystem buffSystem = new BuffSystem(buffType);
-            buffSystem.applyBuff(attacker);
+            // アイテムフレームを破壊
+            itemFrame.remove();
+            arrow.remove();
+
+            // ダメージ処理
+            player.damage(1000, DamageSource.builder(DamageType.ARROW).build());
+
+            // スコア加算
+            if (OSGPlayerUtils.isPlayerEnabled(attacker)) {
+                objective.getScore(attacker.getName()).setScore(objective.getScore(attacker.getName()).getScore() + 1);
+            }
+
+            // アイテムフレームのアイテムからバフを適用 (別チームのプレイヤーの場合のみ)
+            if (isDifferentTeam && !displayedItem.getType().isAir()) {
+                BuffType buffType = BuffType.getBuffTypeByItemStack(displayedItem);
+                // 攻撃者にバフを適用
+                BuffSystem buffSystem = new BuffSystem(buffType);
+                buffSystem.applyBuff(attacker);
+            }
+        } else {
+            // アイテムフレーム以外に当たった場合は矢を消去
+            if (OSGPlayerUtils.isPlayerEnabled(attacker)) {
+                arrow.remove();
+            }
         }
     }
 
