@@ -4,12 +4,10 @@ import com.karasu256.one_shot_glory.One_Shot_Glory;
 import com.karasu256.one_shot_glory.event.GameEventListener;
 import com.karasu256.one_shot_glory.util.GameManager;
 
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Team;
 
 /**
  * One-Shot-Glory プラグインのゲーム初期化と管理を行うユーティリティクラス

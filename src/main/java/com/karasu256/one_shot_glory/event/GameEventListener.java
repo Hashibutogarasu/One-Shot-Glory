@@ -7,11 +7,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.GameMode;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,6 +25,8 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -30,10 +34,10 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Team;
 
 import com.karasu256.one_shot_glory.One_Shot_Glory;
-import com.karasu256.one_shot_glory.util.ArmorStandUtils;
 import com.karasu256.one_shot_glory.util.BuffSystem;
 import com.karasu256.one_shot_glory.util.BuffType;
 import com.karasu256.one_shot_glory.util.GameManager;
+import com.karasu256.one_shot_glory.util.ItemFrameUtils;
 import com.karasu256.one_shot_glory.util.OSGPlayerUtils;
 
 /**
@@ -83,7 +87,8 @@ public class GameEventListener implements Listener {
         PlayerDeathEvent.getHandlerList().unregister(this);
         PlayerRespawnEvent.getHandlerList().unregister(this);
         PlayerQuitEvent.getHandlerList().unregister(this);
-        PlayerGameModeChangeEvent.getHandlerList().unregister(this); // 追加
+        PlayerGameModeChangeEvent.getHandlerList().unregister(this);
+        PlayerItemHeldEvent.getHandlerList().unregister(this);
 
         // タスクを停止
         if (collisionCheckTaskId != -1) {
@@ -93,6 +98,16 @@ public class GameEventListener implements Listener {
 
         // 状態管理マップをクリア
         armorStandCollisionStates.clear();
+    }
+
+    /**
+     * アイテムフレームの当たり判定を設定するメソッド
+     * @param itemFrame 対象のアイテムフレーム
+     * @param hasCollision 当たり判定を有効にするかどうか
+     */
+    private void setItemFrameCollision(ItemFrame itemFrame, boolean hasCollision) {
+        // itemFrame.setCollidable(hasCollision);
+        armorStandCollisionStates.put(itemFrame.getUniqueId(), hasCollision);
     }
 
     /**
@@ -119,8 +134,8 @@ public class GameEventListener implements Listener {
     /**
      * エンティティがダメージを受けたときのイベントハンドラ
      * <p>
-     * ArmorStandがダメージを受けた場合、その所有者プレイヤーにダメージを与え、
-     * 攻撃したプレイヤーにスコアを加算します。また、ArmorStandの頭部アイテムに基づいて
+     * ItemFrameがダメージを受けた場合、その所有者プレイヤーにダメージを与え、
+     * 攻撃したプレイヤーにスコアを加算します。また、ItemFrameのアイテムに基づいて
      * 攻撃者にバフ効果を付与します。
      * </p>
      * 
@@ -151,10 +166,16 @@ public class GameEventListener implements Listener {
             return;
         }
 
-        // アーマースタンドへのダメージ処理
-        if (event.getEntity() instanceof ArmorStand armorStand) {
-            // プラグイン製のアーマースタンドかチェック
-            if (!ArmorStandUtils.isPluginArmorStand(armorStand)) {
+        // アイテムフレームへのダメージ処理
+        if (event.getEntity() instanceof ItemFrame itemFrame) {
+            // プラグイン製のアイテムフレームかチェック
+            if (!ItemFrameUtils.isPluginItemFrame(itemFrame)) {
+                return;
+            }
+
+            // プレイヤーからの直接攻撃の場合はキャンセル
+            if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
+                event.setCancelled(true);
                 return;
             }
 
@@ -170,14 +191,14 @@ public class GameEventListener implements Listener {
             }
 
             // メタデータが存在し、空でないことを確認
-            if (!armorStand.hasMetadata("owner") || armorStand.getMetadata("owner").isEmpty()) {
+            if (!itemFrame.hasMetadata("owner") || itemFrame.getMetadata("owner").isEmpty()) {
                 return;
             }
             
-            // アーマースタンドの所有者プレイヤーを取得
-            var player = armorStand.getWorld().getEntitiesByClass(Player.class).stream()
+            // アイテムフレームの所有者プレイヤーを取得
+            var player = itemFrame.getWorld().getEntitiesByClass(Player.class).stream()
                     .filter(entity -> entity.getUniqueId().toString()
-                            .equals(armorStand.getMetadata("owner").get(0).asString()))
+                            .equals(itemFrame.getMetadata("owner").get(0).asString()))
                     .findFirst().orElse(null);
 
             // プレイヤーが無効な場合は処理しない
@@ -209,17 +230,17 @@ public class GameEventListener implements Listener {
             
             // ダメージ処理
             player.damage(1000, DamageSource.builder(DamageType.OUT_OF_WORLD).build());
-            armorStand.remove();
+            itemFrame.remove();
 
             // スコア加算
             if (OSGPlayerUtils.isPlayerEnabled(attacker)) {
                 objective.getScore(attacker.getName()).setScore(objective.getScore(attacker.getName()).getScore() + 1);
             }
 
-            // アーマースタンドの頭装備からバフを適用 (別チームのプレイヤーの場合のみ)
+            // アイテムフレームのアイテムからバフを適用 (別チームのプレイヤーの場合のみ)
             if (isDifferentTeam) {
-                var itemStack = armorStand.getEquipment().getHelmet();
-                BuffType buffType = BuffType.getBuffTypeByItemStack(itemStack);
+                var displayedItem = itemFrame.getItem();
+                BuffType buffType = BuffType.getBuffTypeByItemStack(displayedItem);
 
                 // 攻撃者にバフを適用
                 BuffSystem buffSystem = new BuffSystem(buffType);
@@ -231,8 +252,8 @@ public class GameEventListener implements Listener {
     /**
      * プレイヤーが移動したときのイベントハンドラ
      * <p>
-     * プレイヤーが移動したとき、そのプレイヤーに関連付けられたArmorStandの位置を更新します。
-     * ArmorStandはプレイヤーの頭上2ブロックの位置に配置されます。
+     * プレイヤーが移動したとき、そのプレイヤーに関連付けられたItemFrameの位置を更新します。
+     * ItemFrameはプレイヤーの頭上2ブロックの位置に配置されます。
      * </p>
      * 
      * @param event プレイヤー移動イベント
@@ -242,31 +263,31 @@ public class GameEventListener implements Listener {
         var player = event.getPlayer();
         var location = player.getLocation();
 
-        // ArmorStandUtilsを使用してプレイヤーのアーマースタンドを取得
-        ArmorStand armorStand = ArmorStandUtils.getPlayerArmorStand(player);
+        // ItemFrameUtilsを使用してプレイヤーのアイテムフレームを取得
+        ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
 
         location.setY(location.getY() + 2);
 
-        if (armorStand != null) {
-            armorStand.teleport(location);
+        if (itemFrame != null) {
+            itemFrame.teleport(location);
         }
     }
 
     /**
      * プレイヤーが死亡したときのイベントハンドラ
      * <p>
-     * プレイヤーが死亡したとき、そのプレイヤーに関連付けられたArmorStandを削除します。
+     * プレイヤーが死亡したとき、そのプレイヤーに関連付けられたItemFrameを削除します。
      * </p>
      * 
      * @param event プレイヤー死亡イベント
      */
     @EventHandler()
     private void onPlayerDeath(PlayerDeathEvent event) {
-        // プレイヤーが死亡したときに、そのプレイヤーのアーマースタンドを削除する
+        // プレイヤーが死亡したときに、そのプレイヤーのアイテムフレームを削除する
         Player player = event.getEntity();
         
-        // ArmorStandUtilsを使用してプレイヤーのアーマースタンドを削除
-        ArmorStandUtils.removePlayerArmorStand(player);
+        // ItemFrameUtilsを使用してプレイヤーのアイテムフレームを削除
+        ItemFrameUtils.removePlayerItemFrame(player);
     }
 
     /**
@@ -301,8 +322,8 @@ public class GameEventListener implements Listener {
     /**
      * プレイヤーがサーバーから退出したときのイベントハンドラ
      * <p>
-     * プレイヤーがサーバーから退出したとき、そのプレイヤーに関連付けられたArmorStandを削除します。
-     * これにより、サーバー上に残骸となるアーマースタンドが残らないようにします。
+     * プレイヤーがサーバーから退出したとき、そのプレイヤーに関連付けられたItemFrameを削除します。
+     * これにより、サーバー上に残骸となるアイテムフレームが残らないようにします。
      * </p>
      * 
      * @param event プレイヤー退出イベント
@@ -311,8 +332,8 @@ public class GameEventListener implements Listener {
     private void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         
-        // ArmorStandUtilsを使用してプレイヤーのアーマースタンドを削除
-        ArmorStandUtils.removePlayerArmorStand(player);
+        // ItemFrameUtilsを使用してプレイヤーのアイテムフレームを削除
+        ItemFrameUtils.removePlayerItemFrame(player);
     }
 
     /**
@@ -344,10 +365,10 @@ public class GameEventListener implements Listener {
                         }
                         
                         // 関連するポーション効果を削除
-                        ArmorStand armorStand = ArmorStandUtils.getPlayerArmorStand(player);
-                        if (armorStand != null) {
+                        ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
+                        if (itemFrame != null) {
                             for (PotionEffectType effectType : buffType.getPotionEffectTypes()) {
-                                armorStand.removePotionEffect(effectType);
+                                // itemFrame.removePotionEffect(effectType);
                             }
                         }
                     }
@@ -361,7 +382,7 @@ public class GameEventListener implements Listener {
      * プレイヤーのゲームモードが変更されたときのイベントハンドラ
      * <p>
      * プレイヤーがスペクテイターモードに変更されたとき、
-     * そのプレイヤーに関連付けられたArmorStandを削除します。
+     * そのプレイヤーに関連付けられたItemFrameを削除します。
      * </p>
      *
      * @param event プレイヤーのゲームモード変更イベント
@@ -372,8 +393,28 @@ public class GameEventListener implements Listener {
         if (event.getNewGameMode() == GameMode.SPECTATOR) {
             Player player = event.getPlayer();
             
-            // プレイヤーのアーマースタンドを削除
-            ArmorStandUtils.removePlayerArmorStand(player);
+            // プレイヤーのアイテムフレームを削除
+            ItemFrameUtils.removePlayerItemFrame(player);
+        }
+    }
+
+    /**
+     * プレイヤーの装備変更イベントハンドラ
+     * プレイヤーが弓を持っているかどうかに応じてアイテムフレームの当たり判定を制御
+     */
+    @EventHandler
+    private void onPlayerItemHeld(PlayerItemHeldEvent event) {
+        Player player = event.getPlayer();
+        ItemStack newItem = player.getInventory().getItem(event.getNewSlot());
+        
+        ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
+        if (itemFrame == null) return;
+
+        // 弓を持っている場合は当たり判定を無効に
+        if (newItem != null && newItem.getType() == Material.BOW) {
+            setItemFrameCollision(itemFrame, false);
+        } else {
+            setItemFrameCollision(itemFrame, true);
         }
     }
 }

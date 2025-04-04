@@ -1,13 +1,19 @@
 package com.karasu256.one_shot_glory.util;
 
 import org.bukkit.World;
+
 import java.util.List;
+
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * ゲームのメカニクスを管理するユーティリティクラス
  * <p>
- * このクラスは、ゲームのターゲットの生成やArmorStandの操作など、
+ * このクラスは、ゲームのターゲットの生成やItemFrameの操作など、
  * ゲーム内のさまざまなメカニクスを管理するための静的メソッドを提供します。
  * </p>
  * 
@@ -43,21 +49,25 @@ public class GameManager {
     }
 
     /**
-     * 指定されたプレイヤーにターゲットを生成するメソッド
-     * <p>
-     * ランダムなバフを持つターゲットをプレイヤーに生成し、乗せます。
-     * </p>
+     * プレイヤーのターゲットを生成するメソッド
      * 
      * @param world  ターゲットを生成するワールド
-     * @param player ターゲットを生成する対象のプレイヤー
+     * @param player ターゲットの所有者となるプレイヤー
      */
     public static void spawnTarget(World world, Player player) {
-        BuffSystem randomBuff = BuffSystem.getRandomBuff(player);
-        var itemStack = randomBuff.getBuffType().getItemStack();
+        // プレイヤーが有効でない場合は何もしない
+        if (!OSGPlayerUtils.isPlayerEnabled(player)) {
+            return;
+        }
 
-        // ArmorStandUtilsを使用してアーマースタンドを生成
-        var entity = ArmorStandUtils.spawnArmorStand(world, player, itemStack);
+        // プレイヤーの現在位置を取得
+        Location location = player.getLocation();
+        location.setY(location.getY() + 2);
 
-        player.addPassenger(entity);
+        ItemStack displayItem = new ItemStack(Material.AIR);
+
+        // アイテムフレームを生成
+        ItemFrame itemFrame = ItemFrameUtils.spawnItemFrame(world, player, displayItem);
+        itemFrame.setItem(displayItem);
     }
 }

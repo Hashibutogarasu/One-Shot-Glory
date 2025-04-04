@@ -67,14 +67,9 @@ public class BuffSystem {
         }
 
         var potionEffectTypes = buffType.getPotionEffectTypes();
-        var armorStand = ArmorStandUtils.getPlayerArmorStand(player);
-        if (armorStand == null) {
-            return;
-        }
         
         for (var potionEffectType : potionEffectTypes) {
             player.addPotionEffect(potionEffectType.createEffect(200, 1));
-            armorStand.addPotionEffect(potionEffectType.createEffect(200, 1));
         }
     }
 
@@ -128,14 +123,9 @@ public class BuffSystem {
         }
 
         var potionEffectTypes = buffType.getPotionEffectTypes();
-        var armorStand = ArmorStandUtils.getPlayerArmorStand(player);
-        if (armorStand == null) {
-            return;
-        }
         
         for (var potionEffectType : potionEffectTypes) {
             player.removePotionEffect(potionEffectType);
-            armorStand.removePotionEffect(potionEffectType);
         }
     }
 
