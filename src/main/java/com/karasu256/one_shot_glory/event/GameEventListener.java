@@ -364,18 +364,16 @@ public class GameEventListener implements Listener {
     /**
      * プレイヤーが死亡したときのイベントハンドラ
      * <p>
-     * プレイヤーが死亡したとき、そのプレイヤーに関連付けられたItemFrameを削除します。
+     * プレイヤーが死亡したとき、そのプレイヤーに関連付けられたターゲットを削除します。
      * </p>
      * 
      * @param event プレイヤー死亡イベント
      */
     @EventHandler()
     private void onPlayerDeath(PlayerDeathEvent event) {
-        // プレイヤーが死亡したときに、そのプレイヤーのアイテムフレームを削除する
         Player player = event.getEntity();
-
-        // ItemFrameUtilsを使用してプレイヤーのアイテムフレームを削除
-        ItemFrameUtils.removePlayerItemFrame(player);
+        // GameManagerのユーティリティメソッドを使用してターゲットを削除
+        GameManager.removeTarget(player);
     }
 
     /**
