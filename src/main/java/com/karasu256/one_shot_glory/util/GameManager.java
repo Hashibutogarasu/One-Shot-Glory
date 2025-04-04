@@ -64,7 +64,7 @@ public class GameManager {
         Location location = player.getLocation();
         location.setY(location.getY() + 2);
 
-        ItemStack displayItem = new ItemStack(Material.AIR);
+        ItemStack displayItem = BuffSystem.getRandomBuff(player).getBuffType().getItemStack();
 
         // アイテムフレームを生成
         ItemFrame itemFrame = ItemFrameUtils.spawnItemFrame(world, player, displayItem);
