@@ -139,11 +139,6 @@ public class GameEventListener implements Listener {
             // その他の通常のダメージ（プレイヤーの攻撃、落下など）はそのまま処理
             return;
         }
-
-        // アイテムフレームへのダメージ処理は全てキャンセル（PlayerItemFrameChangeEventで処理）
-        if (event.getEntity() instanceof ItemFrame) {
-            event.setCancelled(true);
-        }
     }
 
     /**
