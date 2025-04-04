@@ -10,7 +10,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
@@ -106,7 +105,8 @@ public class GameEventListener implements Listener {
 
     /**
      * アイテムフレームの当たり判定を設定するメソッド
-     * @param itemFrame 対象のアイテムフレーム
+     * 
+     * @param itemFrame    対象のアイテムフレーム
      * @param hasCollision 当たり判定を有効にするかどうか
      */
     private void setItemFrameCollision(ItemFrame itemFrame, boolean hasCollision) {
@@ -125,23 +125,22 @@ public class GameEventListener implements Listener {
             }
 
             // 矢によるダメージの場合
-            if (event.getDamageSource().getCausingEntity() != null && 
-                event.getDamageSource().getCausingEntity().getType() == EntityType.ARROW) {
-                
+            if (event.getDamageSource().getCausingEntity() != null &&
+                    event.getDamageSource().getCausingEntity().getType() == EntityType.ARROW) {
+
                 // 攻撃者が有効なプレイヤーの場合のみ処理
-                if (event.getDamageSource().getCausingEntity() instanceof Player attacker && 
-                    OSGPlayerUtils.isPlayerEnabled(attacker)) {
+                if (event.getDamageSource().getCausingEntity() instanceof Player attacker &&
+                        OSGPlayerUtils.isPlayerEnabled(attacker)) {
                     player.damage(1000, DamageSource.builder(DamageType.ARROW).build());
                     event.setCancelled(true);
                 }
                 return;
             }
-            
+
             // その他の通常のダメージ（プレイヤーの攻撃、落下など）はそのまま処理
             return;
         }
     }
-
 
     /**
      * 矢が何かに当たったときのイベントハンドラ
@@ -193,16 +192,16 @@ public class GameEventListener implements Listener {
             }
 
             // チームの確認
-            boolean isDifferentTeam = true;  // デフォルトでは別チームとみなす
+            boolean isDifferentTeam = true; // デフォルトでは別チームとみなす
             Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
             Team attackerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(attacker.getName());
-            
+
             // 両方が同じチームに所属していて、そのチームがフレンドリーファイアを許可していない場合
-            if (playerTeam != null && attackerTeam != null && playerTeam.equals(attackerTeam) && 
-                !playerTeam.allowFriendlyFire()) {
+            if (playerTeam != null && attackerTeam != null && playerTeam.equals(attackerTeam) &&
+                    !playerTeam.allowFriendlyFire()) {
                 isDifferentTeam = false;
             }
-            
+
             // 同じチームの場合は処理をキャンセル
             if (!isDifferentTeam) {
                 return;
@@ -275,7 +274,7 @@ public class GameEventListener implements Listener {
     private void onPlayerDeath(PlayerDeathEvent event) {
         // プレイヤーが死亡したときに、そのプレイヤーのアイテムフレームを削除する
         Player player = event.getEntity();
-        
+
         // ItemFrameUtilsを使用してプレイヤーのアイテムフレームを削除
         ItemFrameUtils.removePlayerItemFrame(player);
     }
@@ -294,17 +293,14 @@ public class GameEventListener implements Listener {
     private void onPlayerRespawn(PlayerRespawnEvent event) {
         var plugin = One_Shot_Glory.getPlugin();
 
-        // プラグインが有効で、プレイヤーが対象の場合のみアイテムフレームを生成
-        if (plugin != null) {
-            var player = event.getPlayer();
-            if (OSGPlayerUtils.isPlayerEnabled(player)) {
-                GameManager.spawnTarget(player.getWorld(), player);
-            }
+        if (plugin == null) {
+            return;
         }
 
-        // give a effect of resistance to the player
         var player = event.getPlayer();
-        if (plugin != null) {
+        if (OSGPlayerUtils.isPlayerEnabled(player)) {
+            GameManager.spawnTarget(player.getWorld(), player);
+
             int delay = plugin.getConfig().getInt("respawn_set_health_delay");
             player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, (delay * 3) + 100, 255));
         }
@@ -322,7 +318,7 @@ public class GameEventListener implements Listener {
     @EventHandler()
     private void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        
+
         // ItemFrameUtilsを使用してプレイヤーのアイテムフレームを削除
         ItemFrameUtils.removePlayerItemFrame(player);
     }
@@ -340,7 +336,7 @@ public class GameEventListener implements Listener {
     private void onPotionEffectRemove(EntityPotionEffectEvent event) {
         if (event.getEntity() instanceof Player player && event.getOldEffect() != null) {
             PotionEffectType removedEffect = event.getOldEffect().getType();
-            
+
             // 各バフタイプをチェック
             for (BuffType buffType : BuffType.values()) {
                 if (buffType.getPotionEffectTypes().contains(removedEffect)) {
@@ -351,10 +347,10 @@ public class GameEventListener implements Listener {
                         if (activeBuffs.isEmpty()) {
                             player.removeMetadata(BuffSystem.BUFF_METADATA_KEY, One_Shot_Glory.getPlugin());
                         } else {
-                            player.setMetadata(BuffSystem.BUFF_METADATA_KEY, 
-                                new FixedMetadataValue(One_Shot_Glory.getPlugin(), activeBuffs));
+                            player.setMetadata(BuffSystem.BUFF_METADATA_KEY,
+                                    new FixedMetadataValue(One_Shot_Glory.getPlugin(), activeBuffs));
                         }
-                        
+
                         // 関連するポーション効果を削除
                         ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
                     }
@@ -377,7 +373,7 @@ public class GameEventListener implements Listener {
     private void onGameModeChange(PlayerGameModeChangeEvent event) {
         Player player = event.getPlayer();
         ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
-        
+
         if (itemFrame == null) {
             return;
         }
@@ -403,9 +399,10 @@ public class GameEventListener implements Listener {
     private void onPlayerItemHeld(PlayerItemHeldEvent event) {
         Player player = event.getPlayer();
         ItemStack newItem = player.getInventory().getItem(event.getNewSlot());
-        
+
         ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
-        if (itemFrame == null) return;
+        if (itemFrame == null)
+            return;
 
         // 弓を持っている場合は当たり判定を無効に
         if (newItem != null && newItem.getType() == Material.BOW) {
