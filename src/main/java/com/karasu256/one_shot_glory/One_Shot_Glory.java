@@ -1,6 +1,7 @@
 package com.karasu256.one_shot_glory;
 
 import com.karasu256.one_shot_glory.commands.MainCommand;
+import com.karasu256.one_shot_glory.util.ItemFrameUtils;
 import com.karasu256.one_shot_glory.util.LanguageManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -85,6 +86,7 @@ public final class One_Shot_Glory extends JavaPlugin {
      */
     @Override
     public void onDisable() {
+        ItemFrameUtils.removeAllItemFrames();
         PlayerInteractEvent.getHandlerList().unregister(this);
         saveConfig();
     }
