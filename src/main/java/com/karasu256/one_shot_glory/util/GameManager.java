@@ -72,7 +72,7 @@ public class GameManager {
             return;
         }
 
-        if (player.getGameMode() != GameMode.SPECTATOR) {
+        if (player.getGameMode() == GameMode.SPECTATOR) {
             return;
         }
 
