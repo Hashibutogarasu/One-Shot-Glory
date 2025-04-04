@@ -66,27 +66,24 @@ jobs:
           fi
           
           # マルチライン変数として設定
-          echo "PACKAGE_DESCRIPTION<<EOF" >> $GITHUB_ENV
-          echo "最新リリースからの変更点:" >> $GITHUB_ENV
-          echo "$COMMIT_MESSAGES" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          
-          # デバッグ用にコンソールにも出力
-          echo "生成された説明文:"
-          echo "最新リリースからの変更点:"
-          echo "$COMMIT_MESSAGES"
-          
-          # build.gradleに渡すためのプロパティファイルを作成
-          echo "packageDescription=$(echo "最新リリースからの変更点:\n$COMMIT_MESSAGES" | base64 | tr -d '\n')" > package_description.properties
+          {
+            DESCRIPTION="最新リリースからの変更点:\n$COMMIT_MESSAGES"
+            echo "PACKAGE_DESCRIPTION=$DESCRIPTION" >> $GITHUB_ENV
+            
+            # デバッグ用にコンソールにも出力
+            echo "生成された説明文:"
+            echo "$DESCRIPTION"
+            
+            # build.gradleに渡すためのプロパティファイルを作成
+            echo "packageDescription=$(echo "$DESCRIPTION" | base64 | tr -d '\n')" > package_description.properties
+          }
 
       - name: Build and Publish with Gradle
         run: ./gradlew build publish -PskipSigning=true -PallowPublishSnapshot=true -PpackageProps=package_description.properties
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # バージョンコンフリクトを解決するための環境変数
           MAVEN_OPTS: "--overwrite"
-          # 自動生成またはユーザー入力に基づくパッケージ説明
           PACKAGE_ABOUT: ${{ inputs.auto_generate_about == true && env.PACKAGE_DESCRIPTION || inputs.about_text }}
 
       - name: Upload Plugin JAR
@@ -96,3 +93,11 @@ jobs:
           path: build/libs/One-Shot-Glory-*.jar
           if-no-files-found: error
           retention-days: 90 # 90日間アーティファクトを保存
+
+      - name: Write Job Summary
+        if: success()
+        run: |
+          echo "## 📦 パッケージが正常に公開されました" >> $GITHUB_STEP_SUMMARY
+          echo "### 📝 CHANGELOG" >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo "${{ inputs.auto_generate_about == true && env.PACKAGE_DESCRIPTION || inputs.about_text }}" >> $GITHUB_STEP_SUMMARY
