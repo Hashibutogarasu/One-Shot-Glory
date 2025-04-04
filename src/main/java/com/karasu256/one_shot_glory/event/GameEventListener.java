@@ -12,7 +12,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
@@ -123,7 +122,7 @@ public class GameEventListener implements Listener {
     /**
      * プレイヤーのゲームモード履歴を更新し、変更があったかどうかを返すメソッド
      * 
-     * @param player 対象のプレイヤー
+     * @param player          対象のプレイヤー
      * @param currentGameMode 現在のゲームモード
      * @return ゲームモードが変更されたかどうか
      */
@@ -169,16 +168,25 @@ public class GameEventListener implements Listener {
             GameMode currentGameMode = player.getGameMode();
             boolean gameModeChanged = updateGameModeHistory(player, currentGameMode);
 
+            // スペクテイターモードのプレイヤーのアイテムフレームは必ず削除
+            if (currentGameMode == GameMode.SPECTATOR) {
+                ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
+                if (itemFrame != null) {
+                    ItemFrameUtils.removePlayerItemFrame(player);
+                }
+                continue;
+            }
+
             // ゲームモードが変更された場合のみ処理を実行
             if (gameModeChanged) {
                 ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
-                
-                // クリエイティブモードまたはスペクテイターモードの場合、アイテムフレームを削除
-                if ((currentGameMode == GameMode.CREATIVE || currentGameMode == GameMode.SPECTATOR) && itemFrame != null) {
+
+                // クリエイティブモードの場合、アイテムフレームを削除
+                if (currentGameMode == GameMode.CREATIVE && itemFrame != null) {
                     ItemFrameUtils.removePlayerItemFrame(player);
                 }
                 // それ以外のモードで、アイテムフレームが存在しない場合は新規生成
-                else if (currentGameMode != GameMode.CREATIVE && currentGameMode != GameMode.SPECTATOR && itemFrame == null) {
+                else if (currentGameMode != GameMode.CREATIVE && itemFrame == null) {
                     BuffType buffType = BuffSystem.getRandomBuff(player).getBuffType();
                     ItemFrameUtils.spawnItemFrame(player.getWorld(), player, buffType.getItemStack());
                 }
@@ -418,7 +426,7 @@ public class GameEventListener implements Listener {
 
         // ItemFrameUtilsを使用してプレイヤーのアイテムフレームを削除
         ItemFrameUtils.removePlayerItemFrame(player);
-        
+
         // プレイヤーのゲームモード履歴を削除
         playerGameModeHistory.remove(player.getUniqueId());
     }
@@ -450,9 +458,6 @@ public class GameEventListener implements Listener {
                             player.setMetadata(BuffSystem.BUFF_METADATA_KEY,
                                     new FixedMetadataValue(One_Shot_Glory.getPlugin(), activeBuffs));
                         }
-
-                        // 関連するポーション効果を削除
-                        ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
                     }
                     break;
                 }
