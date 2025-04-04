@@ -5,14 +5,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.GameMode;
+import org.bukkit.Bukkit;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -25,12 +23,11 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
-import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Objective;
-import org.bukkit.util.Vector;
+import org.bukkit.scoreboard.Team;
 
 import com.karasu256.one_shot_glory.One_Shot_Glory;
 import com.karasu256.one_shot_glory.util.ArmorStandUtils;
@@ -58,9 +55,6 @@ public class GameEventListener implements Listener {
      * アーマースタンドの当たり判定を更新するタスクのスケジューラーID
      */
     private int collisionCheckTaskId = -1;
-
-    /** 当たり判定更新時の同期ロック用オブジェクト */
-    private static final Object collisionLock = new Object();
 
     /** アーマースタンドのコリジョン状態を保持するマップ */
     private static final Map<UUID, Boolean> armorStandCollisionStates = new ConcurrentHashMap<>();
@@ -165,8 +159,13 @@ public class GameEventListener implements Listener {
             }
 
             // 矢によるダメージ以外はキャンセル
-            if (!(event.getDamageSource().getCausingEntity() instanceof org.bukkit.entity.Arrow)) {
+            if (!(event.getDamageSource().getCausingEntity() instanceof Arrow arrow)) {
                 event.setCancelled(true);
+                return;
+            }
+
+            // 矢の発射者を取得
+            if (!(arrow.getShooter() instanceof Player attacker)) {
                 return;
             }
 
@@ -175,6 +174,7 @@ public class GameEventListener implements Listener {
                 return;
             }
             
+            // アーマースタンドの所有者プレイヤーを取得
             var player = armorStand.getWorld().getEntitiesByClass(Player.class).stream()
                     .filter(entity -> entity.getUniqueId().toString()
                             .equals(armorStand.getMetadata("owner").get(0).asString()))
@@ -186,30 +186,44 @@ public class GameEventListener implements Listener {
             }
 
             // 所有者と攻撃者が同じ場合は何もしない
-            if (player == event.getDamageSource().getCausingEntity()) {
+            if (player.equals(attacker)) {
                 return;
             }
-
+            
+            // チームの確認
+            boolean isDifferentTeam = true;  // デフォルトでは別チームとみなす
+            Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
+            Team attackerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(attacker.getName());
+            
+            // 両方が同じチームに所属していて、そのチームがフレンドリーファイアを許可していない場合
+            if (playerTeam != null && attackerTeam != null && playerTeam.equals(attackerTeam) && 
+                !playerTeam.allowFriendlyFire()) {
+                isDifferentTeam = false;
+            }
+            
+            // 同じチームの場合はダメージをキャンセル
+            if (!isDifferentTeam) {
+                event.setCancelled(true);
+                return;
+            }
+            
+            // ダメージ処理
             player.damage(1000, DamageSource.builder(DamageType.OUT_OF_WORLD).build());
             armorStand.remove();
 
-            // ダメージを与えたプレイヤーの処理
-            var entity = event.getDamageSource().getCausingEntity();
-
-            if (entity instanceof Player killer && OSGPlayerUtils.isPlayerEnabled(killer)) {
-                objective.getScore(entity.getName()).setScore(objective.getScore(entity.getName()).getScore() + 1);
+            // スコア加算
+            if (OSGPlayerUtils.isPlayerEnabled(attacker)) {
+                objective.getScore(attacker.getName()).setScore(objective.getScore(attacker.getName()).getScore() + 1);
             }
 
-            // アーマースタンドの頭装備からバフを適用
-            if (armorStand != null) {
+            // アーマースタンドの頭装備からバフを適用 (別チームのプレイヤーの場合のみ)
+            if (isDifferentTeam) {
                 var itemStack = armorStand.getEquipment().getHelmet();
                 BuffType buffType = BuffType.getBuffTypeByItemStack(itemStack);
 
                 // 攻撃者にバフを適用
-                if (entity instanceof Player killer && OSGPlayerUtils.isPlayerEnabled(killer)) {
-                    BuffSystem buffSystem = new BuffSystem(buffType);
-                    buffSystem.applyBuff(killer);
-                }
+                BuffSystem buffSystem = new BuffSystem(buffType);
+                buffSystem.applyBuff(attacker);
             }
         }
     }
