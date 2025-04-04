@@ -10,7 +10,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
@@ -106,7 +105,6 @@ public class GameEventListener implements Listener {
      * @param hasCollision 当たり判定を有効にするかどうか
      */
     private void setItemFrameCollision(ItemFrame itemFrame, boolean hasCollision) {
-        // itemFrame.setCollidable(hasCollision);
         armorStandCollisionStates.put(itemFrame.getUniqueId(), hasCollision);
     }
 
@@ -173,25 +171,24 @@ public class GameEventListener implements Listener {
                 return;
             }
 
-            // プレイヤーからの直接攻撃の場合はキャンセル
-            if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
-                event.setCancelled(true);
-                return;
-            }
-
-            // 矢によるダメージ以外はキャンセル
-            if (!(event.getDamageSource().getCausingEntity() instanceof Arrow arrow)) {
-                event.setCancelled(true);
-                return;
-            }
-
-            // 矢の発射者を取得
-            if (!(arrow.getShooter() instanceof Player attacker)) {
-                return;
-            }
-
             // メタデータが存在し、空でないことを確認
             if (!itemFrame.hasMetadata("owner") || itemFrame.getMetadata("owner").isEmpty()) {
+                return;
+            }
+
+            Player attacker = null;
+            
+            // ダメージの種類に応じて攻撃者を特定
+            if (event.getDamageSource().getCausingEntity() instanceof Arrow arrow) {
+                if (arrow.getShooter() instanceof Player) {
+                    attacker = (Player) arrow.getShooter();
+                }
+            } else if (event.getDamageSource().getCausingEntity() instanceof Player) {
+                attacker = (Player) event.getDamageSource().getCausingEntity();
+            }
+
+            // 攻撃者が特定できない場合は処理を中止
+            if (attacker == null) {
                 return;
             }
             
@@ -366,11 +363,6 @@ public class GameEventListener implements Listener {
                         
                         // 関連するポーション効果を削除
                         ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
-                        if (itemFrame != null) {
-                            for (PotionEffectType effectType : buffType.getPotionEffectTypes()) {
-                                // itemFrame.removePotionEffect(effectType);
-                            }
-                        }
                     }
                     break;
                 }
