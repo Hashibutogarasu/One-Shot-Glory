@@ -50,6 +50,18 @@ public class GameManager {
 
     /**
      * プレイヤーのターゲットを生成するメソッド
+     * <p>
+     * プレイヤーの現在位置にターゲットを生成します。
+     * </p>
+     * 
+     * @param player ターゲットの所有者となるプレイヤー
+     */
+    public static void spawnTarget(Player player) {
+        spawnTarget(player.getWorld(), player);
+    }
+
+    /**
+     * プレイヤーのターゲットを生成するメソッド
      * 
      * @param world  ターゲットを生成するワールド
      * @param player ターゲットの所有者となるプレイヤー

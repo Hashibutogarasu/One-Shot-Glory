@@ -299,7 +299,7 @@ public class GameEventListener implements Listener {
 
         var player = event.getPlayer();
         if (OSGPlayerUtils.isPlayerEnabled(player)) {
-            GameManager.spawnTarget(player.getWorld(), player);
+            GameManager.spawnTarget(player);
 
             int delay = plugin.getConfig().getInt("respawn_set_health_delay");
             player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, (delay * 3) + 100, 255));
