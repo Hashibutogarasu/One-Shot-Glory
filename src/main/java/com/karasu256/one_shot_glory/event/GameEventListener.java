@@ -20,6 +20,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -328,6 +329,34 @@ public class GameEventListener implements Listener {
         location.setY(location.getY() + 2);
 
         if (itemFrame != null) {
+            itemFrame.teleport(location);
+        }
+    }
+
+    /**
+     * エンティティがテレポートしたときのイベントハンドラ
+     * <p>
+     * プレイヤーがテレポートしたとき、そのプレイヤーに関連付けられたItemFrameの位置を更新します。
+     * ItemFrameはプレイヤーの頭上2ブロックの位置に配置されます。
+     * </p>
+     * 
+     * @param event エンティティテレポートイベント
+     */
+    @EventHandler()
+    private void onEntityTeleport(EntityTeleportEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+
+        if (!OSGPlayerUtils.isPlayerEnabled(player)) {
+            return;
+        }
+
+        var location = event.getTo();
+        ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
+
+        if (itemFrame != null) {
+            location.setY(location.getY() + 2);
             itemFrame.teleport(location);
         }
     }
