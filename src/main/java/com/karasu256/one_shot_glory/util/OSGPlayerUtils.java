@@ -82,6 +82,7 @@ public class OSGPlayerUtils {
      *
      * @return スコアボードオブジェクト
      */
+    @SuppressWarnings("deprecation")
     private static Objective getEnabledPlayersObjective() {
         var scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         var objective = scoreboard.getObjective("osg_enabled_players");
