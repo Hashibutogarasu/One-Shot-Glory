@@ -55,10 +55,10 @@ jobs:
           
           # 初回リリースの場合とそれ以外で処理を分ける
           if [[ "$LATEST_TAG" == "初回リリース" ]]; then
-            COMMIT_MESSAGES=$(git log --pretty=format:"- %s" --no-merges)
+            COMMIT_MESSAGES=$(git log --pretty=format:"- %s" --no-merges | grep -v "\[ci skip\]$")
             echo "初回リリースのため、全てのコミットを表示します"
           else
-            COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+            COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s" --no-merges | grep -v "\[ci skip\]$")
           fi
           
           if [ -z "$COMMIT_MESSAGES" ]; then
