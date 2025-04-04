@@ -4,6 +4,7 @@ import org.bukkit.World;
 
 import java.util.List;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.ItemFrame;
@@ -67,6 +68,14 @@ public class GameManager {
      * @param player ターゲットの所有者となるプレイヤー
      */
     public static void spawnTarget(World world, Player player) {
+        if (player == null) {
+            return;
+        }
+
+        if (player.getGameMode() != GameMode.SPECTATOR) {
+            return;
+        }
+
         // プレイヤーが有効でない場合は何もしない
         if (!OSGPlayerUtils.isPlayerEnabled(player)) {
             return;

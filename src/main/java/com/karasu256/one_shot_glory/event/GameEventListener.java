@@ -210,9 +210,7 @@ public class GameEventListener implements Listener {
             // アイテムフレームのアイテムを保存しておく（バフ付与用）
             var displayedItem = itemFrame.getItem();
 
-            // プレイヤーのアイテムフレームを削除
-            Entity entity = ItemFrameUtils.getPlayerItemFrame(player);
-            entity.remove();
+            itemFrame.remove();
             arrow.remove();
 
             // ダメージ処理
