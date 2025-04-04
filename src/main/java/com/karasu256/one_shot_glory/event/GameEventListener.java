@@ -1,5 +1,7 @@
 package com.karasu256.one_shot_glory.event;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,6 +35,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Team;
 
+import com.destroystokyo.paper.event.server.ServerTickEndEvent;
 import com.karasu256.one_shot_glory.One_Shot_Glory;
 import com.karasu256.one_shot_glory.util.BuffSystem;
 import com.karasu256.one_shot_glory.util.BuffType;
@@ -64,6 +67,9 @@ public class GameEventListener implements Listener {
 
     /** アーマースタンドのコリジョン状態を保持するマップ */
     private static final Map<UUID, Boolean> armorStandCollisionStates = new ConcurrentHashMap<>();
+
+    /** プレイヤーのゲームモード履歴を管理するマップ */
+    private static final Map<UUID, Deque<GameMode>> playerGameModeHistory = new ConcurrentHashMap<>();
 
     /**
      * GameEventListenerのコンストラクタ
@@ -111,6 +117,72 @@ public class GameEventListener implements Listener {
      */
     private void setItemFrameCollision(ItemFrame itemFrame, boolean hasCollision) {
         armorStandCollisionStates.put(itemFrame.getUniqueId(), hasCollision);
+    }
+
+    /**
+     * プレイヤーのゲームモード履歴を更新し、変更があったかどうかを返すメソッド
+     * 
+     * @param player 対象のプレイヤー
+     * @param currentGameMode 現在のゲームモード
+     * @return ゲームモードが変更されたかどうか
+     */
+    private boolean updateGameModeHistory(Player player, GameMode currentGameMode) {
+        UUID playerId = player.getUniqueId();
+        Deque<GameMode> history = playerGameModeHistory.computeIfAbsent(playerId, k -> new ArrayDeque<>());
+
+        // 履歴が空の場合は初期化
+        if (history.isEmpty()) {
+            history.addLast(currentGameMode);
+            history.addLast(currentGameMode);
+            return false;
+        }
+
+        // 最新のゲームモードと比較
+        GameMode lastGameMode = history.peekLast();
+        if (lastGameMode != currentGameMode) {
+            // 履歴が2つある場合は古い方を削除
+            if (history.size() >= 2) {
+                history.removeFirst();
+            }
+            history.addLast(currentGameMode);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * サーバーのティック終了時のイベントハンドラ
+     * プレイヤーのゲームモードをリアルタイムで監視し、必要な処理を行います
+     *
+     * @param event サーバーティック終了イベント
+     */
+    @EventHandler
+    private void onServerTickEnd(ServerTickEndEvent event) {
+        // サーバー上の全プレイヤーを取得
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!OSGPlayerUtils.isPlayerEnabled(player)) {
+                continue;
+            }
+
+            GameMode currentGameMode = player.getGameMode();
+            boolean gameModeChanged = updateGameModeHistory(player, currentGameMode);
+
+            // ゲームモードが変更された場合のみ処理を実行
+            if (gameModeChanged) {
+                ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
+                
+                // クリエイティブモードまたはスペクテイターモードの場合、アイテムフレームを削除
+                if ((currentGameMode == GameMode.CREATIVE || currentGameMode == GameMode.SPECTATOR) && itemFrame != null) {
+                    ItemFrameUtils.removePlayerItemFrame(player);
+                }
+                // それ以外のモードで、アイテムフレームが存在しない場合は新規生成
+                else if (currentGameMode != GameMode.CREATIVE && currentGameMode != GameMode.SPECTATOR && itemFrame == null) {
+                    BuffType buffType = BuffSystem.getRandomBuff(player).getBuffType();
+                    ItemFrameUtils.spawnItemFrame(player.getWorld(), player, buffType.getItemStack());
+                }
+            }
+        }
     }
 
     /**
@@ -319,6 +391,9 @@ public class GameEventListener implements Listener {
 
         // ItemFrameUtilsを使用してプレイヤーのアイテムフレームを削除
         ItemFrameUtils.removePlayerItemFrame(player);
+        
+        // プレイヤーのゲームモード履歴を削除
+        playerGameModeHistory.remove(player.getUniqueId());
     }
 
     /**
@@ -355,33 +430,6 @@ public class GameEventListener implements Listener {
                     break;
                 }
             }
-        }
-    }
-
-    /**
-     * プレイヤーのゲームモードが変更されたときのイベントハンドラ
-     * <p>
-     * プレイヤーがスペクテイターモードに変更されたとき、
-     * そのプレイヤーに関連付けられたItemFrameを削除します。
-     * </p>
-     *
-     * @param event プレイヤーのゲームモード変更イベント
-     */
-    @EventHandler
-    private void onGameModeChange(PlayerGameModeChangeEvent event) {
-        Player player = event.getPlayer();
-        ItemFrame itemFrame = ItemFrameUtils.getPlayerItemFrame(player);
-
-        if (itemFrame == null) {
-            return;
-        }
-
-        if (event.getNewGameMode() == GameMode.SPECTATOR) {
-            ItemFrameUtils.removePlayerItemFrame(player);
-        }
-        else if (event.getNewGameMode() != GameMode.CREATIVE) {
-            BuffType buffType = BuffSystem.getRandomBuff(player).getBuffType();
-            itemFrame = ItemFrameUtils.spawnItemFrame(player.getWorld(), player, buffType.getItemStack());
         }
     }
 
