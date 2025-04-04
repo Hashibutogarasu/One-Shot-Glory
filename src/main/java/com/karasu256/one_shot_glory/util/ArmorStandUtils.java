@@ -152,7 +152,7 @@ public class ArmorStandUtils {
         armorStand.setGravity(false);
         armorStand.setRemoveWhenFarAway(true);
         armorStand.setSmall(true);
-        armorStand.setCollidable(false);
+        armorStand.setCollidable(true);
         armorStand.setMetadata("id", new FixedMetadataValue(One_Shot_Glory.getPlugin(), "armor_stand"));
         armorStand.setMetadata("owner", new FixedMetadataValue(One_Shot_Glory.getPlugin(), player.getUniqueId().toString()));
 

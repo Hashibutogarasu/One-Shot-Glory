@@ -67,16 +67,11 @@ public class GameEventListener implements Listener {
 
     /**
      * GameEventListenerのコンストラクタ
-     * <p>
-     * スコア管理のための目標オブジェクトを設定し、
-     * アーマースタンドの当たり判定更新タスクを開始します。
-     * </p>
      * 
      * @param objective スコアを記録するための目標オブジェクト
      */
     public GameEventListener(Objective objective) {
         this.objective = objective;
-        startCollisionCheckTask();
     }
 
     /**
@@ -129,52 +124,6 @@ public class GameEventListener implements Listener {
 
         // 視線が通るかどうかをチェック
         return player.hasLineOfSight(target);
-    }
-
-    /**
-     * アーマースタンドの当たり判定更新タスクを開始するメソッド
-     */
-    private void startCollisionCheckTask() {
-        var plugin = One_Shot_Glory.getPlugin();
-        if (plugin != null) {
-            collisionCheckTaskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-                synchronized (collisionLock) {
-                    for (World world : plugin.getServer().getWorlds()) {
-                        // 全てのプレイヤーに対して処理
-                        for (Player player : world.getPlayers()) {
-                            // プレイヤーが弓を持っているか確認
-                            if (player.getInventory().getItemInMainHand().getType() == Material.BOW ||
-                                player.getInventory().getItemInOffHand().getType() == Material.BOW) {
-                                
-                                // プレイヤーの視界内（100ブロック以内）のエンティティを取得
-                                for (Entity entity : player.getNearbyEntities(100, 100, 100)) {
-                                    if (entity instanceof ArmorStand) {
-                                        ArmorStand armorStand = (ArmorStand) entity;
-                                        
-                                        // プラグイン製のアーマースタンドかつ、自分のものでない場合
-                                        if (ArmorStandUtils.isPluginArmorStand(armorStand) && 
-                                            !ArmorStandUtils.isPlayerOwnedArmorStand(armorStand, player)) {
-                                            
-                                            UUID armorStandId = armorStand.getUniqueId();
-                                            boolean shouldBeCollidable = isInFieldOfView(player, armorStand);
-                                            
-                                            // 現在の状態を取得または初期化
-                                            Boolean currentState = armorStandCollisionStates.get(armorStandId);
-                                            
-                                            // 状態が変更された場合のみ更新
-                                            if (currentState == null || currentState != shouldBeCollidable) {
-                                                armorStand.setCollidable(shouldBeCollidable);
-                                                armorStandCollisionStates.put(armorStandId, shouldBeCollidable);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }, 0L, 1L); // 1tickごとに実行
-        }
     }
 
     /**
