@@ -237,9 +237,24 @@ public class ArmorStandUtils {
             return false;
         }
         
-        return entity.hasMetadata("id") && 
-               !entity.getMetadata("id").isEmpty() && 
-               entity.getMetadata("id").get(0).asString().equals("armor_stand");
+        // アーマースタンドが管理リストに含まれているか確認する早い方法
+        if (managedArmorStands.contains(entity)) {
+            return true;
+        }
+        
+        // メタデータを確認
+        if (entity.hasMetadata("id") && 
+            !entity.getMetadata("id").isEmpty() && 
+            entity.getMetadata("id").get(0).asString().equals("armor_stand")) {
+            
+            // 見つかったArmorStandを管理リストに追加 (キャッシュとして)
+            if (!managedArmorStands.contains(entity)) {
+                managedArmorStands.add((ArmorStand)entity);
+            }
+            return true;
+        }
+        
+        return false;
     }
 
     /**
