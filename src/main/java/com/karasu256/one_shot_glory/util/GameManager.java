@@ -72,10 +72,6 @@ public class GameManager {
             return;
         }
 
-        if (player.getGameMode() == GameMode.SPECTATOR) {
-            return;
-        }
-
         // プレイヤーが有効でない場合は何もしない
         if (!OSGPlayerUtils.isPlayerEnabled(player)) {
             return;

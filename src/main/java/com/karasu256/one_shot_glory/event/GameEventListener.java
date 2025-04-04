@@ -376,16 +376,12 @@ public class GameEventListener implements Listener {
             return;
         }
 
-        // スペクテイターモードに変更される場合
         if (event.getNewGameMode() == GameMode.SPECTATOR) {
-            // アイテムフレームのアイテムを空気に設定
-            itemFrame.setItem(new ItemStack(Material.AIR));
+            ItemFrameUtils.removePlayerItemFrame(player);
         }
-        // クリエイティブまたはスペクテイター以外のモードに変更される場合
         else if (event.getNewGameMode() != GameMode.CREATIVE) {
-            // ランダムなバフを取得してアイテムフレームに設定
             BuffType buffType = BuffSystem.getRandomBuff(player).getBuffType();
-            itemFrame.setItem(buffType.getItemStack());
+            itemFrame = ItemFrameUtils.spawnItemFrame(player.getWorld(), player, buffType.getItemStack());
         }
     }
 
