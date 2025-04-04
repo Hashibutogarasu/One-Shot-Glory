@@ -73,6 +73,7 @@ public class ItemFrameUtils {
         itemFrame.setFixed(true); // 破壊できないように
         itemFrame.setPersistent(true); // 自然消滅しないように
         itemFrame.setInvulnerable(true); // ダメージを受けないように
+        itemFrame.setSilent(true);
         itemFrame.setRotation(itemFrame.getRotation().rotateClockwise()); // 回転をリセット
 
         // メタデータの設定
