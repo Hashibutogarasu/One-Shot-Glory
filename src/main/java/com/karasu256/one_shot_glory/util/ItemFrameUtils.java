@@ -1,6 +1,8 @@
 package com.karasu256.one_shot_glory.util;
 
 import com.karasu256.one_shot_glory.One_Shot_Glory;
+
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -135,6 +137,7 @@ public class ItemFrameUtils {
     public static boolean removePlayerItemFrame(Player player) {
         ItemFrame itemFrame = getPlayerItemFrame(player);
         if (itemFrame != null && !itemFrame.isDead()) {
+            itemFrame.setItem(ItemStack.of(Material.AIR));
             itemFrame.remove();
             playerItemFrameMap.remove(player.getUniqueId());
             managedItemFrames.remove(itemFrame);
