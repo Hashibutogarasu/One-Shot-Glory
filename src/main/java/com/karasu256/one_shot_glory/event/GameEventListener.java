@@ -75,58 +75,6 @@ public class GameEventListener implements Listener {
     }
 
     /**
-     * プレイヤーの視界内にエンティティがあるかどうかを判定するメソッド
-     * <p>
-     * プレイヤーの視線方向と視野角を考慮して、エンティティが視界内にあるかどうかを判定します。
-     * 視野角は水平方向70度、垂直方向40度とし、距離は100ブロック以内とします。
-     * </p>
-     * 
-     * @param player 判定の基準となるプレイヤー
-     * @param target 視界内にあるか判定するエンティティ
-     * @return 視界内にある場合はtrue、そうでない場合はfalse
-     */
-    private boolean isInFieldOfView(Player player, Entity target) {
-        // プレイヤーとターゲットの位置ベクトルを取得
-        Location playerLoc = player.getEyeLocation();
-        Location targetLoc = target.getLocation();
-        
-        // 距離チェック（100ブロック以上離れている場合は視界外）
-        if (playerLoc.distance(targetLoc) > 100) {
-            return false;
-        }
-
-        // プレイヤーの視線方向ベクトルを取得
-        Vector playerDirection = playerLoc.getDirection();
-        
-        // プレイヤーからターゲットへのベクトルを計算
-        Vector toTarget = targetLoc.toVector().subtract(playerLoc.toVector());
-        
-        // 2つのベクトルのなす角を計算（ラジアン）
-        double angle = playerDirection.angle(toTarget);
-        
-        // 水平方向の角度（70度）をラジアンに変換
-        double horizontalFOV = Math.toRadians(70);
-        
-        // 垂直方向の角度（40度）をラジアンに変換
-        double verticalFOV = Math.toRadians(40);
-        
-        // 水平方向の角度チェック
-        if (angle > horizontalFOV / 2) {
-            return false;
-        }
-        
-        // 垂直方向の角度チェック
-        double verticalAngle = Math.abs(Math.asin(toTarget.normalize().getY()) - 
-                                      Math.asin(playerDirection.normalize().getY()));
-        if (verticalAngle > verticalFOV / 2) {
-            return false;
-        }
-
-        // 視線が通るかどうかをチェック
-        return player.hasLineOfSight(target);
-    }
-
-    /**
      * このリスナーの登録を解除するメソッド
      * <p>
      * 関連するすべてのイベントハンドラの登録を解除し、
@@ -390,50 +338,6 @@ public class GameEventListener implements Listener {
                         }
                     }
                     break;
-                }
-            }
-        }
-    }
-
-    /**
-     * ワールドのティックイベントを処理するハンドラ
-     * <p>
-     * プレイヤーの視界内のアーマースタンドの当たり判定を制御します。
-     * プレイヤーが弓を持っている場合、自分以外のプレイヤーのアーマースタンドの
-     * 当たり判定を有効にします。
-     * </p>
-     * 
-     * @param event ワールドティックイベント
-     */
-    @EventHandler
-    private void onWorldTick(WorldLoadEvent event) {
-        World world = event.getWorld();
-        
-        // 全てのプレイヤーに対して処理
-        for (Player player : world.getPlayers()) {
-            // プレイヤーが弓を持っているか確認
-            if (player.getInventory().getItemInMainHand().getType() == Material.BOW ||
-                player.getInventory().getItemInOffHand().getType() == Material.BOW) {
-                
-                // プレイヤーの視界内（100ブロック以内）のエンティティを取得
-                for (Entity entity : player.getNearbyEntities(100, 100, 100)) {
-                    if (entity instanceof ArmorStand) {
-                        ArmorStand armorStand = (ArmorStand) entity;
-                        
-                        // プラグイン製のアーマースタンドかつ、自分のものでない場合
-                        if (ArmorStandUtils.isPluginArmorStand(armorStand) && 
-                            !ArmorStandUtils.isPlayerOwnedArmorStand(armorStand, player)) {
-                            
-                            // プレイヤーの視界内にあるかどうかを確認
-                            if (isInFieldOfView(player, armorStand)) {
-                                // 当たり判定を有効化
-                                armorStand.setCollidable(true);
-                            } else {
-                                // 視界外なら当たり判定を無効化
-                                armorStand.setCollidable(false);
-                            }
-                        }
-                    }
                 }
             }
         }
