@@ -69,7 +69,7 @@ public class BuffSystem {
         var potionEffectTypes = buffType.getPotionEffectTypes();
         
         for (var potionEffectType : potionEffectTypes) {
-            player.addPotionEffect(potionEffectType.createEffect(200, 1));
+            player.addPotionEffect(potionEffectType.createEffect(600, 1));
         }
     }
 

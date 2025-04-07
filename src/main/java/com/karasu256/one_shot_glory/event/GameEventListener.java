@@ -212,7 +212,6 @@ public class GameEventListener implements Listener {
                 // 攻撃者が有効なプレイヤーの場合のみ処理
                 if (event.getDamageSource().getCausingEntity() instanceof Player attacker &&
                         OSGPlayerUtils.isPlayerEnabled(attacker)) {
-                    player.damage(1000, DamageSource.builder(DamageType.ARROW).build());
                     event.setCancelled(true);
                 }
                 return;
@@ -305,9 +304,22 @@ public class GameEventListener implements Listener {
             // アイテムフレームのアイテムからバフを適用 (別チームのプレイヤーの場合のみ)
             if (isDifferentTeam && !displayedItem.getType().isAir()) {
                 BuffType buffType = BuffType.getBuffTypeByItemStack(displayedItem);
-                // 攻撃者にバフを適用
+
+                // バフシステムを初期化
                 BuffSystem buffSystem = new BuffSystem(buffType);
-                buffSystem.applyBuff(attacker);
+
+                if (attackerTeam != null) {
+                    // チームのメンバー全員にバフを適用
+                    for (String entry : attackerTeam.getEntries()) {
+                        Player teammate = Bukkit.getPlayer(entry);
+                        if (teammate != null && teammate.isOnline() && OSGPlayerUtils.isPlayerEnabled(teammate)) {
+                            buffSystem.applyBuff(teammate);
+                        }
+                    }
+                } else {
+                    // チームに所属していない場合は攻撃者のみにバフを適用
+                    buffSystem.applyBuff(attacker);
+                }
             }
         } else {
             // アイテムフレーム以外に当たった場合は矢を消去
