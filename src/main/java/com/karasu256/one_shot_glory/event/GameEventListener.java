@@ -256,7 +256,7 @@ public class GameEventListener implements Listener {
             }
 
             // アイテムフレームの所有者プレイヤーを取得
-            var player = itemFrame.getWorld().getEntitiesByClass(Player.class).stream()
+            Player player = itemFrame.getWorld().getEntitiesByClass(Player.class).stream()
                     .filter(entity -> entity.getUniqueId().toString()
                             .equals(itemFrame.getMetadata("owner").get(0).asString()))
                     .findFirst().orElse(null);
@@ -293,9 +293,6 @@ public class GameEventListener implements Listener {
             itemFrame.remove();
             arrow.remove();
 
-            // ダメージ処理
-            player.damage(1000, DamageSource.builder(DamageType.ARROW).build());
-
             // スコア加算
             if (OSGPlayerUtils.isPlayerEnabled(attacker)) {
                 objective.getScore(attacker.getName()).setScore(objective.getScore(attacker.getName()).getScore() + 1);
@@ -320,6 +317,9 @@ public class GameEventListener implements Listener {
                     // チームに所属していない場合は攻撃者のみにバフを適用
                     buffSystem.applyBuff(attacker);
                 }
+
+                ItemFrameUtils.removePlayerItemFrame(player);
+                ItemFrameUtils.spawnItemFrame(player.getWorld(), player, BuffSystem.getRandomBuff(player).getBuffType().getItemStack());
             }
         } else {
             // アイテムフレーム以外に当たった場合は矢を消去
