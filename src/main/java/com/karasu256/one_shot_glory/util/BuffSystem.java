@@ -26,7 +26,7 @@ public class BuffSystem {
     private final BuffType buffType;
     /** メタデータのキー */
     public static final String BUFF_METADATA_KEY = "active_buffs";
-    
+
     /**
      * 特定のバフタイプを持つBuffSystemインスタンスを作成するコンストラクタ
      * 
@@ -73,7 +73,7 @@ public class BuffSystem {
 
         // 既に他のバフが適用されているか確認
         List<BuffType> activeBuffs = getActiveBuffs(player);
-        if (!activeBuffs.isEmpty() && !activeBuffs.contains(buffType)) {
+        if (!activeBuffs.isEmpty() && !activeBuffs.contains(buffType) && hasAnyBuff(player)) {
             // 既に別のバフを持っている場合は新しいバフを適用しない
             return false;
         }
@@ -85,18 +85,18 @@ public class BuffSystem {
         }
 
         var potionEffectTypes = buffType.getPotionEffectTypes();
-        
+
         for (var potionEffectType : potionEffectTypes) {
             player.addPotionEffect(potionEffectType.createEffect(600, 1));
         }
-        
+
         return true;
     }
 
     /**
      * プレイヤーから指定したバフを取り除きます
      * 
-     * @param player バフを取り除くプレイヤー
+     * @param player   バフを取り除くプレイヤー
      * @param buffType 取り除くバフの種類
      */
     public static void removeBuff(Player player, BuffType buffType) {
@@ -143,7 +143,7 @@ public class BuffSystem {
         }
 
         var potionEffectTypes = buffType.getPotionEffectTypes();
-        
+
         for (var potionEffectType : potionEffectTypes) {
             player.removePotionEffect(potionEffectType);
         }
@@ -186,7 +186,7 @@ public class BuffSystem {
     /**
      * プレイヤーが指定されたバフを持っているかを確認します
      * 
-     * @param player 確認するプレイヤー
+     * @param player   確認するプレイヤー
      * @param buffType 確認するバフの種類
      * @return プレイヤーが指定されたバフを持っている場合はtrue
      */
