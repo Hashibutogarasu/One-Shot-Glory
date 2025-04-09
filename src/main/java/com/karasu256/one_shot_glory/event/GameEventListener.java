@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.GameMode;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.EntityType;
@@ -307,25 +308,47 @@ public class GameEventListener implements Listener {
 
                 // バフシステムを初期化
                 BuffSystem buffSystem = new BuffSystem(buffType);
-
+                
+                boolean buffApplied = false;
+                
                 if (attackerTeam != null) {
                     // チームのメンバー全員にバフを適用
                     for (String entry : attackerTeam.getEntries()) {
                         Player teammate = Bukkit.getPlayer(entry);
                         if (teammate != null && teammate.isOnline() && OSGPlayerUtils.isPlayerEnabled(teammate)) {
-                            buffSystem.applyBuff(teammate);
-                            teammate.sendMessage(
-                                    Component.text(teammate.getName() + "に" + buffType.getName() + "を付与しました。"));
+                            // 少なくとも1人にバフが適用できたらtrueになる
+                            if (buffSystem.applyBuff(teammate)) {
+                                buffApplied = true;
+                                teammate.sendMessage(
+                                        Component.text(teammate.getName() + "に" + buffType.getName() + "を付与しました。"));
+                            } else {
+                                teammate.playSound(teammate.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1.0f, 1.0f);
+                            }
                         }
                     }
                 } else {
                     // チームに所属していない場合は攻撃者のみにバフを適用
-                    buffSystem.applyBuff(attacker);
+                    if (buffSystem.applyBuff(attacker)) {
+                        buffApplied = true;
+                        attacker.sendMessage(
+                                Component.text(attacker.getName() + "に" + buffType.getName() + "を付与しました。"));
+                    } else {
+                        attacker.playSound(attacker.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1.0f, 1.0f);
+                    }
                 }
 
+                // アイテムフレームを削除
                 ItemFrameUtils.removePlayerItemFrame(player);
-                ItemFrameUtils.spawnItemFrame(player.getWorld(), player,
-                        BuffSystem.getRandomBuff(player).getBuffType().getItemStack());
+                
+                // バフが適用できた場合のみ相手のバフの種類を変更
+                if (buffApplied) {
+                    // バフを適用できた場合は新しいランダムバフのアイテムフレームを生成
+                    ItemFrameUtils.spawnItemFrame(player.getWorld(), player,
+                            BuffSystem.getRandomBuff(player).getBuffType().getItemStack());
+                } else {
+                    // バフを適用できなかった場合は同じ種類のバフのアイテムフレームを再生成
+                    ItemFrameUtils.spawnItemFrame(player.getWorld(), player, buffType.getItemStack());
+                }
             }
         } else {
             // アイテムフレーム以外に当たった場合は矢を消去

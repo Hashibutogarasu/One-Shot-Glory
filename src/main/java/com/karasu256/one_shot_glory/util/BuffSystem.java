@@ -46,21 +46,39 @@ public class BuffSystem {
     }
 
     /**
+     * プレイヤーが何らかのバフを持っているかチェックするメソッド
+     * 
+     * @param player チェックするプレイヤー
+     * @return プレイヤーが何らかのバフを持っている場合はtrue
+     */
+    public static boolean hasAnyBuff(Player player) {
+        return !getActiveBuffs(player).isEmpty();
+    }
+
+    /**
      * プレイヤーにバフ効果を適用するメソッド
      * <p>
      * このバフシステムに関連付けられたバフタイプのポーション効果を
      * プレイヤーとその関連ArmorStandに適用し、メタデータに保存します。
+     * プレイヤーが既に他のバフを持っている場合は適用しません。
      * </p>
      * 
      * @param player バフを適用するプレイヤー
+     * @return バフを適用できた場合はtrue、既に他のバフがあった場合はfalse
      */
-    public void applyBuff(Player player) {
+    public boolean applyBuff(Player player) {
         if (buffType == null) {
-            return;
+            return false;
         }
 
-        // 現在のバフリストを取得
+        // 既に他のバフが適用されているか確認
         List<BuffType> activeBuffs = getActiveBuffs(player);
+        if (!activeBuffs.isEmpty() && !activeBuffs.contains(buffType)) {
+            // 既に別のバフを持っている場合は新しいバフを適用しない
+            return false;
+        }
+
+        // 現在のバフがなければ追加
         if (!activeBuffs.contains(buffType)) {
             activeBuffs.add(buffType);
             player.setMetadata(BUFF_METADATA_KEY, new FixedMetadataValue(One_Shot_Glory.getPlugin(), activeBuffs));
@@ -71,6 +89,8 @@ public class BuffSystem {
         for (var potionEffectType : potionEffectTypes) {
             player.addPotionEffect(potionEffectType.createEffect(600, 1));
         }
+        
+        return true;
     }
 
     /**
