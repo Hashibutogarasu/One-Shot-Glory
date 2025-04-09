@@ -272,6 +272,8 @@ public class GameEventListener implements Listener {
                 return;
             }
 
+            player.damage(4);
+
             // チームの確認
             boolean isDifferentTeam = true; // デフォルトでは別チームとみなす
             Team playerTeam = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(player.getName());
