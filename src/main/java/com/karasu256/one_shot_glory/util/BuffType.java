@@ -18,22 +18,27 @@ import org.bukkit.potion.PotionEffectType;
  */
 public enum BuffType {
     /** 移動速度を上昇させるバフ */
-    SPEED(Material.FEATHER, List.of(PotionEffectType.SPEED)),
+    SPEED(Material.FEATHER, List.of(PotionEffectType.SPEED), "移動速度上昇"),
     /** 攻撃力を強化するバフ */
-    STRENGTH(Material.IRON_SWORD, List.of(PotionEffectType.STRENGTH)),
+    STRENGTH(Material.IRON_SWORD, List.of(PotionEffectType.STRENGTH), "攻撃力増加"),
     /** 体力を回復するバフ */
-    REGENERATION(Material.GOLDEN_APPLE, List.of(PotionEffectType.REGENERATION)),
+    REGENERATION(Material.GOLDEN_APPLE, List.of(PotionEffectType.REGENERATION), "再生"),
     /** ダメージ耐性を付与するバフ */
-    RESISTANCE(Material.SHIELD, List.of(PotionEffectType.RESISTANCE)),
+    RESISTANCE(Material.SHIELD, List.of(PotionEffectType.RESISTANCE), "耐性"),
     /** ジャンプ力を強化するバフ */
-    JUMP(Material.SLIME_BALL, List.of(PotionEffectType.JUMP_BOOST)),
+    JUMP(Material.SLIME_BALL, List.of(PotionEffectType.JUMP_BOOST), "跳躍力上昇"),
     /** 火炎耐性を付与するバフ */
-    FIRE(Material.BLAZE_POWDER, List.of(PotionEffectType.FIRE_RESISTANCE));
+    FIRE(Material.BLAZE_POWDER, List.of(PotionEffectType.FIRE_RESISTANCE), "火炎耐性"),
+    /** 弱体化を付与するデバフ */
+    WEAKNESS(Material.STRAY_SPAWN_EGG, List.of(PotionEffectType.WEAKNESS), "弱体化");
 
     /** このバフタイプに関連付けられたマテリアルタイプ */
     private Material itemType;
     /** このバフタイプで付与されるポーション効果のリスト */
     private List<PotionEffectType> potionEffectTypes;
+
+    /** バフの名前 */
+    private final String name;
 
     /**
      * このバフタイプに関連付けられたアイテムスタックを取得するメソッド
@@ -54,14 +59,24 @@ public enum BuffType {
     }
 
     /**
+     * バフの名前を取得するメソッド
+     * 
+     * @return バフの名前
+     */
+    public String getName(){
+        return this.name;
+    }
+
+    /**
      * BuffTypeの列挙型コンストラクタ
      * 
      * @param itemType このバフタイプに関連付けるマテリアルタイプ
      * @param potionEffectTypes このバフタイプで付与するポーション効果のリスト
      */
-    BuffType(Material itemType, List<PotionEffectType> potionEffectTypes) {
+    BuffType(Material itemType, List<PotionEffectType> potionEffectTypes, String name) {
             this.itemType = itemType;
             this.potionEffectTypes = potionEffectTypes;
+            this.name = name;
     }
 
     /**

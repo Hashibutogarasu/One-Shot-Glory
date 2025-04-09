@@ -44,6 +44,7 @@ import com.karasu256.one_shot_glory.util.ItemFrameUtils;
 import com.karasu256.one_shot_glory.util.OSGPlayerUtils;
 
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
+import net.kyori.adventure.text.Component;
 
 /**
  * One-Shot-Gloryゲームでのイベントを処理するリスナークラス
@@ -311,6 +312,8 @@ public class GameEventListener implements Listener {
                         Player teammate = Bukkit.getPlayer(entry);
                         if (teammate != null && teammate.isOnline() && OSGPlayerUtils.isPlayerEnabled(teammate)) {
                             buffSystem.applyBuff(teammate);
+                            teammate.sendMessage(
+                                    Component.text(teammate.getName() + "に" + buffType.getName() + "を付与しました。"));
                         }
                     }
                 } else {
@@ -319,7 +322,8 @@ public class GameEventListener implements Listener {
                 }
 
                 ItemFrameUtils.removePlayerItemFrame(player);
-                ItemFrameUtils.spawnItemFrame(player.getWorld(), player, BuffSystem.getRandomBuff(player).getBuffType().getItemStack());
+                ItemFrameUtils.spawnItemFrame(player.getWorld(), player,
+                        BuffSystem.getRandomBuff(player).getBuffType().getItemStack());
             }
         } else {
             // アイテムフレーム以外に当たった場合は矢を消去
